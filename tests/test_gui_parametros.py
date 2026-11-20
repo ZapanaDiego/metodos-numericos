@@ -50,9 +50,11 @@ def test_aire_y_tumbling():
     p.aire = False
     assert p.cd_area_efectiva() == 0.0
     p.aire = True
+    p.set_valor("cd_area_m2", 0.7)
+    assert p.cd_area_efectiva() == pytest.approx(0.7)
     p.tumbling = True
     p.semilla = 7
-    assert 0.4 <= p.cd_area_efectiva() <= 0.8
+    assert 0.05 <= p.cd_area_efectiva() <= 1.2
 
 
 def test_simular_y_k_efectiva():

@@ -16,6 +16,7 @@ from simulador.parametros import Computo, Cuerpo, Escena, Telarana
 @dataclass
 class ParametrosVista:
     masa_kg: float = 50.0
+    cd_area_m2: float = 0.60
     estiramiento_m: float = 0.40
     k_n_m: float = 195739.0
     longitud_m: float = 42.0
@@ -27,6 +28,7 @@ class ParametrosVista:
 
     RANGOS = {
         "masa_kg": (30.0, 100.0),
+        "cd_area_m2": (0.05, 1.20),
         "estiramiento_m": (0.01, 1.59),
         "k_n_m": (10.0, 1e6),
         "longitud_m": (10.0, 100.0),
@@ -52,6 +54,7 @@ class ParametrosVista:
 
     def restablecer(self) -> None:
         self.masa_kg = 50.0
+        self.cd_area_m2 = 0.60
         self.estiramiento_m = 0.40
         self.k_n_m = 195739.0
         self.longitud_m = 42.0
@@ -64,9 +67,9 @@ class ParametrosVista:
         if not self.aire:
             return 0.0
         if not self.tumbling:
-            return 0.6
+            return float(self.cd_area_m2)
         # proxy determinista: el tumbling muestrea un Cd·A efectivo
-        return float(0.6 + 0.15 * np.sin(self.semilla % 997))
+        return float(np.clip(self.cd_area_m2 + 0.15 * np.sin(self.semilla % 997), 0.05, 1.2))
 
     def escena(self) -> Escena:
         L = float(self.longitud_m)
@@ -107,6 +110,7 @@ class ParametrosVista:
     def valores_ui(self) -> dict:
         return {
             "masa_kg": self.masa_kg,
+            "cd_area_m2": self.cd_area_m2,
             "estiramiento_m": self.estiramiento_m,
             "k_n_m": self.k_efectiva() if self.modo == "calibracion" else self.k_n_m,
             "longitud_m": self.longitud_m,

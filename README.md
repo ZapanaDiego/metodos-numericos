@@ -331,7 +331,19 @@ Con `n = 2000` y semilla 42: `a_max` mediana 158.8 g, HIC mediano 7 989,
 `x` mediano 0.40 m y **100 %** de las ejecuciones con HIC > 700. El percentil 5
 de `a_max` sigue muy por encima de 6 g.
 
-### 4.9 Sensibilidad (e8)
+### 4.9 Interfaz 3D
+
+![Interfaz de la app](resultados/app_captura.png)
+
+La app de escritorio usa un tema oscuro pizarra + cian, un maniquí low-poly
+articulado (cabeza, cuello, torso, brazos, manos, piernas y pies), una seda
+dorada que se une a la cintura y tres encuadres: **Seguir**, **Cuerpo** y
+**Torre**. Cada variable tiene símbolo, unidad y un tooltip; el panel muestra
+los valores derivados y el veredicto (letal/supervivencia). El benchmark `b1`
+dio 37 fps a 800×600 con el maniquí completo, por lo que no fue necesario el
+fallback OpenGL.
+
+### 4.10 Sensibilidad (e8)
 
 ![Sensibilidad](resultados/e8_sensibilidad.png)
 
@@ -425,6 +437,7 @@ python3 -m venv .venv
 .venv/bin/python -m experimentos.e8_sensibilidad
 .venv/bin/python -m experimentos.e9_redondeo
 .venv/bin/python -m experimentos.e10_raices
+.venv/bin/python -m experimentos.b1_benchmark_humanoide
 
 # escenarios
 .venv/bin/python run.py --escenario base

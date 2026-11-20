@@ -20,6 +20,7 @@ from simulador.modelo import simular
 from simulador.parametros import Escena
 from visual.animacion import Reproductor
 from visual.escena3d import construir_escena
+from visual.estilo import configurar_matplotlib
 
 
 def main(argv=None):
@@ -31,12 +32,14 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     args.salida.parent.mkdir(parents=True, exist_ok=True)
+    configurar_matplotlib()
     r = simular(Escena.pelicula(), n_caida=700, n_resorte=700)
     rep = Reproductor(r, fps=args.fps)
 
     fig = plt.figure(figsize=(args.ancho / 100, args.ancho * 0.85 / 100), dpi=100)
     ax = fig.add_subplot(111, projection="3d")
-    escena = construir_escena(fig, ax)
+    escena = construir_escena(fig, ax, r)
+    escena.aplicar_vista("seguir", 1.2)
     hud = fig.text(0.02, 0.95, "", fontsize=9, family="monospace", va="top")
     fig.suptitle("Caída de Gwen Stacy — simulación numérica", fontsize=11)
 
@@ -55,7 +58,7 @@ def main(argv=None):
                 f"a={est.a_g:6.1f}g  F={est.fuerza/1e3:6.1f}kN  HIC={est.hic:7.0f}  {est.semaforo}"
             )
             giro = (args.semilla % 19) - 9
-            ax.view_init(elev=10, azim=-70 + giro + 5 * np.sin(2 * np.pi * t / max(r.t[-1], 1e-9)))
+            ax.view_init(elev=6, azim=-72 + giro + 2 * np.sin(2 * np.pi * t / max(r.t[-1], 1e-9)))
             writer.grab_frame()
 
     plt.close(fig)

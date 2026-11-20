@@ -82,7 +82,20 @@ docs/          presentación
 - Sin RNG global: `numpy.random.Generator` creado por ejecución.
 - Dataclasses con unidades en el nombre (`masa_kg`, `longitud_m`).
 
-## 5. Convenciones
+## 5. Convenciones visuales
+
+- Tema oscuro pizarra + cian (`visual/estilo.py`): fondo `#0b0f14`, superficie
+  `#121821`, tarjeta `#1a2230`, acento `#4cc9f0`, alerta `#ff5c5c`.
+- El cuerpo es un maniquí low-poly procedural (`visual/cuerpo3d.py`), no un
+  stick figure. La seda se une a la cintura, no al cuello.
+- Tres vistas: `seguir` (cámara que acompaña), `cuerpo` (detalle fijo) y
+  `torre` (contexto completo).
+- La física no cambia por motivos visuales. Cualquier cambio de pose es solo
+  presentación.
+- `b1` mide el rendimiento del maniquí; `app_captura.png` es la captura de
+  referencia de la interfaz.
+
+## 6. Convenciones
 
 - Commits: `I07 raices: 5 metodos + tabla de convergencia`.
 - Docstrings y comentarios en español; nombres de API en español.
@@ -91,7 +104,7 @@ docs/          presentación
   pesados van a `.gitignore`.
 - No se introducen dependencias nuevas sin justificarlas aquí.
 
-## 6. Reglas de parada
+## 7. Reglas de parada
 
 1. Leicester no reproduce dentro de tolerancia.
 2. El benchmark 3D no alcanza 25 fps y no hay fallback aceptado.

@@ -22,6 +22,7 @@ EXPERIMENTOS = {
     "e9": "experimentos.e9_redondeo",
     "e10": "experimentos.e10_raices",
     "b0": "experimentos.b0_benchmark3d",
+    "b1": "experimentos.b1_benchmark_humanoide",
 }
 ESCENARIOS = {
     "base": Escena.pelicula,

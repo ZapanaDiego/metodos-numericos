@@ -1,67 +1,80 @@
-"""Escena 3D de la torre, el cuerpo y la telaraña (mplot3d).
-
-La escena se construye una sola vez y se actualiza con ``actualizar``. El
-número de artistas no crece entre frames. Unidades: metros; ``z`` es la altura
-sobre el suelo.
-"""
+"""Escena 3D oscura de la torre, el cuerpo articulado y la telaraña."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
 import numpy as np
-from mpl_toolkits.mplot3d.art3d import Line3D, Poly3DCollection
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+from .cuerpo3d import CuerpoHumano
+from .estilo import CUERPO, PALETA, aplicar_estilo_3d
 
 ANCLA_Z = 43.60
 ALTURA_TORRE = 72.0
 LADO_TORRE = 18.0
-ALTURA_TORSO_FINAL = 1.20
 
 
-def _cara(ax, puntos, color, alpha=0.5, borde="#2c3e50", lw=0.5):
-    colleccion = Poly3DCollection([puntos], facecolor=color, edgecolor=borde, linewidths=lw, alpha=alpha)
+def _cara(ax, puntos, color, alpha=0.5, borde=None, lw=0.5):
+    colleccion = Poly3DCollection(
+        [puntos],
+        facecolor=color,
+        edgecolor=borde or PALETA["borde"],
+        linewidths=lw,
+        alpha=alpha,
+    )
     ax.add_collection3d(colleccion)
     return colleccion
 
 
 def construir_torre(ax) -> dict:
-    """Torre estilizada, suelo, reloj y ancla. Devuelve colecciones estáticas."""
+    """Torre estilizada con ventanales, reloj y ancla sobre fondo oscuro."""
     L = LADO_TORRE
     H = ALTURA_TORRE
-    # suelo
-    suelo = _cara(ax, [(-L, -L, 0), (L, -L, 0), (L, L, 0), (-L, L, 0)], "#d5d8dc", 0.9)
-    # cuatro paredes (sin techo para ver el interior)
+    suelo = _cara(ax, [(-L, -L, 0), (L, -L, 0), (L, L, 0), (-L, L, 0)], "#111821", 0.95, PALETA["borde"], 0.8)
     paredes = []
     for x0, y0, x1, y1 in [(-L, -L, L, -L), (L, -L, L, L), (L, L, -L, L), (-L, L, -L, -L)]:
         paredes.append(
             _cara(
                 ax,
                 [(x0, y0, 0), (x1, y1, 0), (x1, y1, H), (x0, y0, H)],
-                "#aeb6bf",
-                0.18,
+                "#1b2635",
+                0.22,
+                "#31465c",
+                0.8,
             )
         )
-    # ventanales como paneles semitransparentes en dos paredes
+        # aristas verticales iluminadas
+        ax.plot([x0, x0], [y0, y0], [0, H], color=PALETA["cian"], alpha=0.18, lw=0.8)
+
     ventanas = []
-    for z0 in (12, 28, 44, 58):
-        ventanas.append(
-            _cara(ax, [(-L, -L + 0.2, z0), (L, -L + 0.2, z0), (L, -L + 0.2, z0 + 8), (-L, -L + 0.2, z0 + 8)], "#5dade2", 0.20, "#85c1e9")
-        )
-    # esfera del reloj (círculo en el plano y=0)
-    theta = np.linspace(0, 2 * np.pi, 40)
-    reloj_pts = [(8 * np.cos(t), -L + 0.3, 60 + 8 * np.sin(t)) for t in theta]
-    reloj = _cara(ax, reloj_pts, "#f7dc6f", 0.85, "#b7950b", 1.0)
-    # agujas
-    (aguja_hora,) = ax.plot([0, 0], [-L + 0.4, -L + 0.4], [60, 66], color="#1c2833", lw=2)
-    (aguja_min,) = ax.plot([0, 3], [-L + 0.4, -L + 0.4], [60, 60], color="#1c2833", lw=1.5)
-    # ancla
-    (ancla,) = ax.plot([0], [0], [ANCLA_Z], "o", color="#c0392b", ms=7)
-    # rejilla del suelo
+    for z0 in (10, 25, 40, 55):
+        for x0 in (-L + 2, -6, 6):
+            ventanas.append(
+                _cara(
+                    ax,
+                    [(x0, -L + 0.15, z0), (x0 + 4, -L + 0.15, z0), (x0 + 4, -L + 0.15, z0 + 7), (x0, -L + 0.15, z0 + 7)],
+                    PALETA["cian"],
+                    0.10,
+                    PALETA["cian"],
+                    0.4,
+                )
+            )
+    # reloj
+    theta = np.linspace(0, 2 * np.pi, 48)
+    reloj_pts = [(7.5 * np.cos(t), -L + 0.25, 60 + 7.5 * np.sin(t)) for t in theta]
+    reloj = _cara(ax, reloj_pts, PALETA["seda"], 0.92, "#f9e79f", 1.0)
+    (aguja_hora,) = ax.plot([0, 0], [-L + 0.4, -L + 0.4], [60, 66], color=PALETA["texto"], lw=2.0)
+    (aguja_min,) = ax.plot([0, 3.2], [-L + 0.4, -L + 0.4], [60, 60], color=PALETA["texto"], lw=1.5)
+    # ancla y halo
+    (ancla,) = ax.plot([0], [0], [ANCLA_Z], "o", color=PALETA["alerta"], ms=8, markeredgecolor="#ffd1d1")
+    (halo,) = ax.plot([0, 0], [0, 0], [ANCLA_Z - 0.6, ANCLA_Z + 0.6], color=PALETA["alerta"], alpha=0.35, lw=1.0)
+    # rejilla
     rejilla = []
-    for v in np.linspace(-L, L, 9):
-        (ln,) = ax.plot([v, v], [-L, L], [0.02, 0.02], color="#95a5a6", lw=0.5)
+    for v in np.linspace(-L, L, 13):
+        (ln,) = ax.plot([v, v], [-L, L], [0.02, 0.02], color=PALETA["borde"], lw=0.45, alpha=0.75)
         rejilla.append(ln)
-        (ln,) = ax.plot([-L, L], [v, v], [0.02, 0.02], color="#95a5a6", lw=0.5)
+        (ln,) = ax.plot([-L, L], [v, v], [0.02, 0.02], color=PALETA["borde"], lw=0.45, alpha=0.75)
         rejilla.append(ln)
     return {
         "suelo": suelo,
@@ -71,6 +84,7 @@ def construir_torre(ax) -> dict:
         "aguja_hora": aguja_hora,
         "aguja_min": aguja_min,
         "ancla": ancla,
+        "halo": halo,
         "rejilla": rejilla,
     }
 
@@ -79,85 +93,159 @@ def construir_torre(ax) -> dict:
 class Escena3D:
     fig: object
     ax: object
+    resultado: object | None
     estaticos: dict
-    segmentos: list = field(default_factory=list)
+    cuerpo: CuerpoHumano
     web: object | None = None
     estela: object | None = None
-    puntos: dict = field(default_factory=dict)
+    sombra: object | None = None
+    marcador: object | None = None
+    etiqueta_ancla: object | None = None
+    vista: str = "cuerpo"
     n_artistas: int = 0
 
+    def aplicar_vista(self, modo: str, altura: float = 1.2) -> None:
+        """Tres encuadres: cuerpo (detalle), torre (contexto) y seguir."""
+        modo = modo.lower()
+        self.vista = modo
+        torre = modo == "torre"
+        for clave in ("paredes", "ventanas", "reloj", "aguja_hora", "aguja_min", "suelo"):
+            artista = self.estaticos.get(clave)
+            if artista is None:
+                continue
+            if isinstance(artista, list):
+                for a in artista:
+                    a.set_visible(torre)
+            else:
+                artista.set_visible(torre)
+        self.etiqueta_ancla.set_visible(not torre)
+        if self.estela is not None:
+            self.estela.set_visible(torre)
+        if torre:
+            self.ax.set_axis_on()
+            self.ax.grid(True, color=PALETA["borde"], alpha=0.25)
+        else:
+            self.ax.set_axis_off()
+        if modo == "torre":
+            self.ax.set_xlim(-LADO_TORRE, LADO_TORRE)
+            self.ax.set_ylim(-LADO_TORRE, LADO_TORRE)
+            self.ax.set_zlim(0, ALTURA_TORRE + 2)
+            self.ax.set_box_aspect((1, 1, 2.8))
+            self.ax.view_init(elev=10, azim=-68)
+        elif modo == "seguir":
+            z0 = max(0.0, altura - 0.95)
+            z1 = z0 + (2.2 if altura < 2.2 else 1.9)
+            self.ax.set_xlim(-1.0, 1.0)
+            self.ax.set_ylim(-1.0, 1.0)
+            self.ax.set_zlim(z0, z1)
+            self.ax.set_box_aspect((1, 1, 1.2))
+            self.ax.view_init(elev=6, azim=-72)
+        else:
+            self.ax.set_xlim(-1.3, 1.3)
+            self.ax.set_ylim(-1.3, 1.3)
+            self.ax.set_zlim(0, 2.7)
+            self.ax.set_box_aspect((1, 1, 1.35))
+            self.ax.view_init(elev=6, azim=-72)
+
     def actualizar(self, estado: dict, trayectoria: np.ndarray | None = None) -> None:
-        """Actualiza el cuerpo y la seda sin crear artistas nuevos."""
-        h = float(np.clip(estado["altura_torso"], -0.5, ALTURA_TORRE))
-        # pequeña inclinación durante el frenado para visualizar el latigazo
-        a_g = float(estado.get("a_g", 1.0))
+        h = float(np.clip(estado.get("altura_torso", 1.2), -0.5, ALTURA_TORRE))
         fase = int(estado.get("fase", 0))
-        sway = 0.0
+        t = float(estado.get("t", 0.0))
+        self.cuerpo.actualizar(estado)
+        if self.vista == "seguir":
+            self.aplicar_vista("seguir", h)
+        cintura = self.cuerpo.punto_cintura(estado)
+
+        # Seda: curva de Bézier desde el ancla hasta el costado de la cintura.
+        u = np.linspace(0.0, 1.0, 32)
+        ancla = np.array([0.0, 0.0, ANCLA_Z])
         if fase == 1:
-            sway = np.clip((a_g - 1.0) / 300.0, 0.0, 0.25)
-        # siete segmentos: cabeza, cuello, torso, pelvis, brazo izq., brazo der., piernas
-        pts = np.array(
-            [
-                [0.0, 0.0, h + 1.05],  # coronilla
-                [0.0, 0.0, h + 0.78],  # cuello
-                [0.0, 0.0, h + 0.42],  # hombros
-                [0.0, 0.0, h],  # torso
-                [0.0, 0.0, h - 0.35],  # pelvis
-                [0.35 + sway, 0.0, h + 0.05],  # mano derecha
-                [-0.35 + sway, 0.0, h + 0.05],  # mano izquierda
-                [0.0, 0.0, h - 0.85],  # rodillas
-                [0.0, 0.0, h - 1.15],  # pies
-            ]
+            control1 = np.array([0.04, 0.03, ANCLA_Z * 0.62])
+            control2 = np.array([0.12, 0.05, h + 0.55])
+        else:
+            control1 = np.array([0.28, 0.10, ANCLA_Z * 0.70])
+            control2 = np.array([0.42, 0.18, h + 1.8])
+        bezier = (
+            (1 - u)[:, None] ** 3 * ancla
+            + 3 * (1 - u)[:, None] ** 2 * u[:, None] * control1
+            + 3 * (1 - u)[:, None] * u[:, None] ** 2 * control2
+            + u[:, None] ** 3 * cintura
         )
-        segmentos = [
-            (pts[0], pts[1]),
-            (pts[1], pts[2]),
-            (pts[2], pts[3]),
-            (pts[3], pts[4]),
-            (pts[2], pts[5]),
-            (pts[2], pts[6]),
-            (pts[4], pts[8]),
-        ]
-        for linea, (p0, p1) in zip(self.segmentos, segmentos, strict=True):
-            linea.set_data_3d([p0[0], p1[0]], [p0[1], p1[1]], [p0[2], p1[2]])
-        # seda: ancla -> torso
-        self.web.set_data_3d([0.0, 0.0], [0.0, 0.0], [ANCLA_Z, h + 0.42])
-        self.web.set_linestyle("-" if fase == 1 else ":")
-        self.web.set_linewidth(2.0 if fase == 1 else 1.0)
-        # cabeza como marcador
-        self.puntos["cabeza"].set_data_3d([0.0], [0.0], [h + 1.05])
-        if trayectoria is not None and self.estela is not None:
+        vib = 0.0
+        if fase == 1 and self.resultado is not None:
+            tau = max(0.0, t - self.resultado.t_tensado_s)
+            vib = 0.035 * np.sin(2 * np.pi * tau / 0.035) * np.exp(-tau / 0.08)
+        bezier[:, 0] += vib * np.sin(np.pi * u)
+        self.web.set_data_3d(bezier[:, 0], bezier[:, 1], bezier[:, 2])
+        self.web.set_color(PALETA["seda"])
+        self.web.set_linewidth(2.6 if fase == 1 else 1.6)
+        self.web.set_alpha(0.98 if fase == 1 else 0.60)
+
+        # Sombra elíptica en el suelo.
+        r = 0.58 * max(0.12, 1.0 - h / 65.0)
+        ang = np.linspace(0, 2 * np.pi, 32)
+        sombra = np.column_stack([r * np.cos(ang), 0.52 * r * np.sin(ang), np.full_like(ang, 0.008)])
+        self.sombra.set_verts([sombra])
+        self.sombra.set_facecolor("#000000")
+        self.sombra.set_alpha(0.42)
+
+        # Estela y marcador de la cintura.
+        if trayectoria is not None:
             self.estela.set_data_3d(trayectoria[:, 0], trayectoria[:, 1], trayectoria[:, 2])
+        self.marcador.set_data_3d([cintura[0]], [cintura[1]], [cintura[2]])
 
     def contar_artistas(self) -> int:
         return len(self.ax.lines) + len(self.ax.collections)
 
 
-def construir_escena(fig, ax) -> Escena3D:
-    estaticos = construir_torre(ax)
-    segmentos = []
-    for _ in range(7):
-        (ln,) = ax.plot([0, 0], [0, 0], [0, 0], color="#c0392b", lw=3, solid_capstyle="round")
-        segmentos.append(ln)
-    (web,) = ax.plot([0, 0], [0, 0], [ANCLA_Z, ANCLA_Z], color="#f1c40f", lw=1.0, ls=":")
-    (estela,) = ax.plot([0], [0], [ANCLA_Z], color="#e67e22", lw=1.0, alpha=0.6)
-    (cabeza,) = ax.plot([0], [0], [ANCLA_Z], "o", color="#c0392b", ms=7)
+def centrar_vista(ax) -> None:
+    ax.view_init(elev=10, azim=-68)
     ax.set_xlim(-LADO_TORRE, LADO_TORRE)
     ax.set_ylim(-LADO_TORRE, LADO_TORRE)
     ax.set_zlim(0, ALTURA_TORRE + 2)
-    ax.set_box_aspect((1, 1, 2.8))
-    ax.view_init(elev=10, azim=-70)
+
+
+def construir_escena(fig, ax, resultado=None) -> Escena3D:
+    aplicar_estilo_3d(fig, ax)
+    estaticos = construir_torre(ax)
+    cuerpo = CuerpoHumano(ax, t_tensado_s=getattr(resultado, "t_tensado_s", 0.0))
+    (web,) = ax.plot([0, 0], [0, 0], [ANCLA_Z, ANCLA_Z], color=PALETA["seda"], lw=1.6, ls="-")
+    (estela,) = ax.plot([0], [0], [ANCLA_Z], color=PALETA["naranja"], lw=1.1, alpha=0.40, ls=":")
+    (marcador,) = ax.plot([0], [0], [1.2], "o", color=PALETA["cian"], ms=4, alpha=0.8)
+    sombra = Poly3DCollection(
+        [],
+        facecolor="#000000",
+        edgecolor=(0.30, 0.78, 0.94, 0.30),
+        linewidths=0.8,
+        alpha=0.45,
+    )
+    ax.add_collection3d(sombra)
+    centrar_vista(ax)
     ax.set_xlabel("x (m)")
     ax.set_ylabel("y (m)")
     ax.set_zlabel("altura (m)")
+    etiqueta = ax.text2D(
+        0.02,
+        0.94,
+        "ancla 43.60 m  ↑\nseda de 42.00 m",
+        transform=ax.transAxes,
+        color=PALETA["seda"],
+        fontsize=8,
+        va="top",
+    )
     n = len(ax.lines) + len(ax.collections)
-    return Escena3D(
+    escena = Escena3D(
         fig=fig,
         ax=ax,
+        resultado=resultado,
         estaticos=estaticos,
-        segmentos=segmentos,
+        cuerpo=cuerpo,
         web=web,
         estela=estela,
-        puntos={"cabeza": cabeza},
+        sombra=sombra,
+        marcador=marcador,
+        etiqueta_ancla=etiqueta,
         n_artistas=n,
     )
+    escena.aplicar_vista("seguir", 1.2)
+    return escena

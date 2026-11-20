@@ -82,6 +82,13 @@
 - e7: 100 % de las corridas con HIC > 700; p5 de `a_max` ≫ 6 g.
 - e8: `k` y la altura dominan; el resultado es robusto.
 
+## Lámina 12b — Interfaz (30 s)
+
+- Captura de la app: tema oscuro pizarra + cian, maniquí articulado y seda dorada.
+- Sidebar con símbolo, nombre, unidad y tooltip por variable.
+- Vistas Seguir / Cuerpo / Torre; HUD con semáforo.
+- Valores derivados en la tarjeta de resumen.
+
 ## Lámina 13 — Conclusiones (60 s)
 
 1. La energía no es el problema; la potencia y la aceleración sí.

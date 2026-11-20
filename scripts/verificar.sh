@@ -4,7 +4,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "== limpieza de resultados =="
-rm -f resultados/*.png resultados/*.csv
+find resultados -maxdepth 1 -name '*.png' ! -name 'app_captura.png' -delete
+rm -f resultados/*.csv
 
 echo "== experimentos =="
 for e in e1_convergencia e2_rigidez e3_energia_hic e4_umbral e5_latigazo \
@@ -22,7 +23,8 @@ ffmpeg -y -v error -ss 2.0 -i resultados/pelicula.mp4 -frames:v 1 resultados/fra
 echo "== pytest =="
 .venv/bin/python -m pytest -q
 
-echo "== benchmark 3D =="
+echo "== benchmarks 3D =="
 .venv/bin/python -m experimentos.b0_benchmark3d
+.venv/bin/python -m experimentos.b1_benchmark_humanoide
 
 echo "OK: todo regenerado y en verde"
