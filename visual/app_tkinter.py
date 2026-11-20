@@ -67,7 +67,8 @@ class App:
         botones.grid(row=fila, column=0, columnspan=3, pady=6, sticky="ew")
         ttk.Button(botones, text="Ejecutar", command=self.ejecutar).grid(row=0, column=0, padx=2)
         ttk.Button(botones, text="Pausa", command=self.pausar).grid(row=0, column=1, padx=2)
-        ttk.Button(botones, text="Reiniciar", command=self.reiniciar).grid(row=0, column=2, padx=2)
+        ttk.Button(botones, text="Reanudar", command=self.reanudar).grid(row=0, column=2, padx=2)
+        ttk.Button(botones, text="Reiniciar", command=self.reiniciar).grid(row=0, column=3, padx=2)
         ttk.Button(botones, text="Restablecer", command=self.restablecer).grid(row=1, column=0, padx=2, pady=2)
         ttk.Button(botones, text="Nueva semilla", command=self.nueva_semilla).grid(row=1, column=1, padx=2, pady=2)
         ttk.Button(botones, text="Monte Carlo", command=self.monte_carlo).grid(row=1, column=2, padx=2, pady=2)
@@ -249,6 +250,12 @@ class App:
 
     def pausar(self):
         self.rep.pause()
+
+    def reanudar(self):
+        if self.rep.t >= self.rep.t_total:
+            self.rep.reiniciar()
+        self.rep.play()
+        self._actualizar_todo()
 
     def reiniciar(self):
         self.rep.reiniciar()
