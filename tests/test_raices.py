@@ -58,6 +58,16 @@ def test_k_critico_supervivencia():
     assert k == pytest.approx(204.375, abs=0.1)
 
 
+def test_newton_para_el_k_critico():
+    from simulador.analitica import amax_en_g
+
+    _, v0 = caida_sin_aire(42.0)
+    f = lambda k: amax_en_g(v0, k, 50.0) - 6.0
+    raiz, it, _ = newton_raphson(f, None, 300.0, tol=1e-10)
+    assert raiz == pytest.approx(204.375, abs=1e-4)
+    assert it < 10
+
+
 def test_instante_de_tensado():
     t, it, _ = t_tensado_numerico(42.0, 50.0, 0.6)
     t_an, _, _ = caida_con_arrastre(42.0, 50.0, 0.6)

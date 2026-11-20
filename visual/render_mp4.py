@@ -54,11 +54,12 @@ def main(argv=None):
                 f"t={est.t:6.3f}s  y={est.altura_torso:5.2f}m  v={est.v:6.2f}m/s\n"
                 f"a={est.a_g:6.1f}g  F={est.fuerza/1e3:6.1f}kN  HIC={est.hic:7.0f}  {est.semaforo}"
             )
-            ax.view_init(elev=10, azim=-70 + 5 * np.sin(2 * np.pi * t / max(r.t[-1], 1e-9)))
+            giro = (args.semilla % 19) - 9
+            ax.view_init(elev=10, azim=-70 + giro + 5 * np.sin(2 * np.pi * t / max(r.t[-1], 1e-9)))
             writer.grab_frame()
 
     plt.close(fig)
-    print(f"MP4 escrito en {args.salida} ({args.salida.stat().st_size/1e6:.2f} MB)")
+    print(f"MP4 escrito en {args.salida} ({args.salida.stat().st_size/1e6:.2f} MB), semilla={args.semilla}")
 
 
 if __name__ == "__main__":

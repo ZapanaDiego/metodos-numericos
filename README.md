@@ -225,7 +225,16 @@ bucle de dibujo nunca integra: solo interpola una trayectoria precalculada.
 
 ## 4. Resultados
 
-### 4.1 Convergencia (e1)
+### 4.1 Raíces (e10)
+
+![Raíces](resultados/e10_raices.png)
+
+Los cinco métodos coinciden en la raíz de `x³ − 2x − 5`; bisección tarda 42
+iteraciones, Newton converge en menos de 10. La misma infraestructura localiza
+el instante de tensado (`t = 3.07567445 s`) y la rigidez crítica de 6 g
+(`k = 204.375 N/m`). La tabla completa está en `resultados/e10_raices.csv`.
+
+### 4.2 Convergencia (e1)
 
 ![Convergencia](resultados/e1_convergencia.png)
 
@@ -238,14 +247,18 @@ RK4 con paso grande supera a Euler con paso pequeño para el mismo número de
 evaluaciones. RKF45 adaptativo es más barato que RK4 de paso fijo para la misma
 tolerancia.
 
-### 4.2 Rigidez (e2)
+### 4.3 Rigidez (e2)
+
+El benchmark `b0` midió 33.6 fps a 800×600 con ~200 polígonos y 7 segmentos;
+como supera el umbral de 25 fps, la app usa `mplot3d` y no necesita el fallback
+OpenGL.
 
 ![Rigidez](resultados/e2_rigidez.png)
 
 El umbral teórico es `h_crit = 2/ω = 27.74 ms`. Euler explícito diverge para
 `h > h_crit`; Euler implícito permanece estable para todos los pasos probados.
 
-### 4.3 Energía, potencia y HIC (e3)
+### 4.4 Energía, potencia y HIC (e3)
 
 ![Energía](resultados/e3_energia.png)
 
@@ -265,7 +278,7 @@ Con la ventana de 36 ms, un pulso de 158.6 g supera ampliamente el umbral 700.
 Gauss-Legendre y Romberg alcanzan alta precisión con menos evaluaciones;
 Simpson 1/3 es exacto para polinomios cúbicos.
 
-### 4.4 Umbral de supervivencia (e4)
+### 4.5 Umbral de supervivencia (e4)
 
 ![Umbral](resultados/e4_umbral.png)
 
@@ -283,7 +296,7 @@ La región factible es **vacía**:
 
 No existe una rigidez que cumpla ambas restricciones.
 
-### 4.5 Latigazo (e5)
+### 4.6 Latigazo (e5)
 
 ![Articulado](resultados/e5_articulado.png)
 
@@ -293,7 +306,7 @@ El torso se detiene a 1.20 m. La cabeza y la cadera permanecen por encima del
 suelo; el daño proviene de la desaceleración y del momento cervical, no de un
 golpe contra el piso.
 
-### 4.6 Orientación (e6)
+### 4.7 Orientación (e6)
 
 ![Orientación](resultados/e6_rozamiento.png)
 
@@ -310,7 +323,7 @@ La velocidad varía un 18 % entre los extremos, pero el HIC se amplifica ~1.9×.
 El factor 1.5 del plan original solo aplica al modo de `k` fijo sobre el rango
 completo; aquí se reporta el modo calibración (`x=0.4`).
 
-### 4.7 Monte Carlo (e7)
+### 4.8 Monte Carlo (e7)
 
 ![Monte Carlo](resultados/e7_montecarlo.png)
 
@@ -318,7 +331,7 @@ Con `n = 2000` y semilla 42: `a_max` mediana 158.8 g, HIC mediano 7 989,
 `x` mediano 0.40 m y **100 %** de las ejecuciones con HIC > 700. El percentil 5
 de `a_max` sigue muy por encima de 6 g.
 
-### 4.8 Sensibilidad (e8)
+### 4.9 Sensibilidad (e8)
 
 ![Sensibilidad](resultados/e8_sensibilidad.png)
 
@@ -411,6 +424,7 @@ python3 -m venv .venv
 .venv/bin/python -m experimentos.e7_montecarlo
 .venv/bin/python -m experimentos.e8_sensibilidad
 .venv/bin/python -m experimentos.e9_redondeo
+.venv/bin/python -m experimentos.e10_raices
 
 # escenarios
 .venv/bin/python run.py --escenario base

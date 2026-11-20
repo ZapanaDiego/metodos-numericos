@@ -20,6 +20,7 @@ EXPERIMENTOS = {
     "e7": "experimentos.e7_montecarlo",
     "e8": "experimentos.e8_sensibilidad",
     "e9": "experimentos.e9_redondeo",
+    "e10": "experimentos.e10_raices",
     "b0": "experimentos.b0_benchmark3d",
 }
 ESCENARIOS = {

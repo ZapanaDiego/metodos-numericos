@@ -8,7 +8,7 @@ rm -f resultados/*.png resultados/*.csv
 
 echo "== experimentos =="
 for e in e1_convergencia e2_rigidez e3_energia_hic e4_umbral e5_latigazo \
-         e6_rozamiento e7_montecarlo e8_sensibilidad e9_redondeo; do
+         e6_rozamiento e7_montecarlo e8_sensibilidad e9_redondeo e10_raices; do
   .venv/bin/python -m experimentos."$e"
 done
 
