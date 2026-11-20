@@ -68,7 +68,7 @@
 
 - Para 6 g: `k = 272.4 N/m`, `x = 12.61 m`, `ε = 30 %`.
 - Para no tocar el suelo: `x ≤ 1.60 m` → `E ≥ 21.3 GPa`, `a ≈ 40 g`.
-- Seda real (1–10 GPa): se estira 3.8–12.6 m e impacta a 18.6–24.9 m/s.
+- Seda real (1–10 GPa): se estira 2.4–8.1 m e impacta a 18.6–24.9 m/s.
 - **No hay intersección.** Ésta es la conclusión del proyecto.
 
 ## Lámina 11 — Latigazo (60 s)

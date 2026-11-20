@@ -291,7 +291,7 @@ La región factible es **vacía**:
 - para `a ≤ 6 g` se necesita `k = 272.4 N/m` y `x = 12.61 m`;
 - para no tocar el suelo se necesita `x ≤ 1.60 m`, es decir `k ≥ 12 694 N/m`
   y `E ≥ 21.3 GPa` (más rígida que cualquier seda real);
-- la seda real (1–10 GPa) se estira entre 3.8 y 12.6 m y el torso impacta el
+- la seda real (1–10 GPa) se estira entre 2.4 y 8.1 m y el torso impacta el
   suelo a 18.6–24.9 m/s.
 
 No existe una rigidez que cumpla ambas restricciones.
@@ -474,6 +474,570 @@ Proyectofinal/
   arriba.
 
 ---
+
+## Anexo A — Modelo matemático y resolución manual
+
+Este anexo desarrolla el modelo de la sección 2 paso a paso y muestra cómo
+resolverlo **a mano con una calculadora**. No cambia la física ni los valores
+golden: es la versión “papel y lápiz” de lo que ejecuta el código.
+
+### A.1 Símbolos y unidades
+
+| Símbolo | Significado | Unidad |
+|---|---|---|
+| `m` | masa total del cuerpo | kg |
+| `g` | gravedad | m/s² |
+| `ρ` | densidad del aire | kg/m³ |
+| `Cd·A` | área de arrastre efectiva | m² |
+| `c` | coeficiente de arrastre `½ρCdA` | kg/m |
+| `v_t` | velocidad terminal | m/s |
+| `H` | caída hasta el tensado | m |
+| `L` | longitud tensa de la seda | m |
+| `x` | estiramiento de la seda | m |
+| `k` | rigidez de la seda | N/m |
+| `ω` | frecuencia angular `sqrt(k/m)` | rad/s |
+| `A` | área de la sección de la seda | m² |
+| `E` | módulo de Young implícito | Pa |
+| `ε` | deformación `x/L` | adimensional |
+| `v₀` | velocidad al tensarse | m/s |
+| `a_t` | aceleración del torso hacia arriba | m/s² |
+| `M` | momento cervical o de cadera | N·m |
+
+### A.2 Geometría y supuestos
+
+Datos de la escena base:
+
+```
+h_ancla = 43.60 m
+L       = 42.00 m
+x       =  0.40 m
+h_torso =  1.20 m
+H       = 42.00 m
+m       = 50 kg
+Cd·A    = 0.60 m²
+ρ       = 1.20 kg/m³
+g       = 9.81 m/s²
+```
+
+La geometría se comprueba con una resta:
+
+```
+43.60 − 42.00 − 0.40 = 1.20 m
+```
+
+El **espacio libre** en el instante de tensado es:
+
+```
+h_ancla − L = 43.60 − 42.00 = 1.60 m
+```
+
+Si la seda se estira más de 1.60 m, el torso toca el suelo antes de detenerse.
+Ésta es la restricción que domina todo el problema.
+
+Supuestos:
+
+1. La caída es vertical y comienza desde el reposo.
+2. El arrastre es cuadrático y usa un `Cd·A` constante durante la caída.
+3. La seda es un resorte lineal sin amortiguamiento.
+4. El cuerpo se ancla en el torso; la cabeza y las piernas son segmentos.
+5. No se modela un golpe de cabeza o piernas contra el suelo.
+
+### A.3 Fase 1: caída con arrastre
+
+#### A.3.1 Deducción
+
+La segunda ley de Newton, tomando positivo hacia abajo:
+
+```
+m dv/dt = m g − ½ ρ Cd A v²
+```
+
+Definimos:
+
+```
+c = ½ ρ Cd A          (kg/m)
+v_t = sqrt(m g / c)   (m/s)
+```
+
+Dividiendo por `m`:
+
+```
+dv/dt = g (1 − v²/v_t²)
+```
+
+Separando variables:
+
+```
+dv / (1 − v²/v_t²) = g dt
+```
+
+La integral del lado izquierdo es `v_t · artanh(v/v_t)`. Con `v(0)=0`:
+
+```
+v_t · artanh(v/v_t) = g t
+v(t) = v_t tanh(g t / v_t)
+```
+
+Integrando otra vez, con `y(0)=0`:
+
+```
+y(t) = (v_t²/g) ln cosh(g t / v_t)
+```
+
+El tiempo de tensado sale de `y(t_f)=H`:
+
+```
+(v_t²/g) ln cosh(g t_f/v_t) = H
+cosh(g t_f/v_t) = exp(g H / v_t²)
+t_f = (v_t/g) arccosh(exp(g H / v_t²))
+```
+
+La velocidad al tensarse es `v₀ = v(t_f)`.
+
+#### A.3.2 Resolución manual del caso base
+
+Paso 1. Coeficiente de arrastre:
+
+```
+c = 0.5 × 1.20 × 0.60 = 0.36 kg/m
+```
+
+Paso 2. Velocidad terminal:
+
+```
+v_t = sqrt(50 × 9.81 / 0.36)
+    = sqrt(1362.5)
+    = 36.91 m/s
+```
+
+Paso 3. Exponente del tiempo:
+
+```
+g H / v_t² = 9.81 × 42 / 1362.5
+           = 0.3024
+```
+
+Paso 4. Tiempo de tensado:
+
+```
+exp(0.3024) = 1.3532
+arccosh(1.3532) = ln(1.3532 + sqrt(1.3532² − 1))
+                = ln(1.3532 + 0.9115)
+                = 0.8174
+t_f = (36.91 / 9.81) × 0.8174
+    = 3.7627 × 0.8174
+    = 3.0757 s
+```
+
+Paso 5. Velocidad al tensarse:
+
+```
+v₀ = 36.91 × tanh(0.8174)
+   = 36.91 × 0.6737
+   = 24.866 m/s
+```
+
+#### A.3.3 Caso sin aire
+
+Si `Cd·A = 0`, entonces `c=0`, `v_t → ∞` y las fórmulas se reducen a:
+
+```
+v(t) = g t
+y(t) = ½ g t²
+t_f = sqrt(2H/g)
+v₀ = sqrt(2gH)
+```
+
+Para `H=42.00` y `g=9.81`:
+
+```
+t_f = sqrt(84/9.81) = 2.926 s
+v₀  = sqrt(2 × 9.81 × 42) = 28.706 m/s
+```
+
+Éste es el caso que se usa para validar contra Leicester.
+
+### A.4 Fase 2: telaraña elástica
+
+#### A.4.1 Deducción
+
+Con `x` medido desde el punto de tensado y positivo hacia abajo:
+
+```
+m ẍ = m g − k x
+ẍ + ω² x = g,     ω = sqrt(k/m)
+```
+
+La solución general es:
+
+```
+x(t) = A cos(ωt) + B sin(ωt) + g/ω²
+```
+
+Con `x(0)=0` y `ẋ(0)=v₀`:
+
+```
+x(t) = (g/ω²)(1 − cos ωt) + (v₀/ω) sin ωt
+ẋ(t) = (g/ω) sin ωt + v₀ cos ωt
+```
+
+La aceleración neta hacia arriba es `a_t = (k/m)x − g`. En el instante de
+tensado vale `−g` (caída libre) y en el pico vale `+a_max`.
+
+#### A.4.2 Estiramiento máximo y aceleración pico
+
+En el máximo, `ẋ=0`:
+
+```
+(g/ω) sin(ωt) + v₀ cos(ωt) = 0
+tan(ωt) = −v₀ω/g
+```
+
+El primer tiempo positivo es:
+
+```
+t_pico = (π − atan(v₀ω/g)) / ω
+```
+
+Sustituyendo en `x(t)` o usando energía:
+
+```
+½ k x_max² = ½ m v₀² + m g x_max
+k x_max² − 2 m g x_max − m v₀² = 0
+x_max = [m g + sqrt((m g)² + k m v₀²)] / k
+```
+
+La aceleración en el pico es:
+
+```
+a_max = (k/m) x_max − g
+      = sqrt(g² + (k/m) v₀²)
+```
+
+Y en unidades de g:
+
+```
+a_max[g] = sqrt(1 + (v₀ω/g)²)
+```
+
+#### A.4.3 Rigidez en modo calibración
+
+Si se conoce el estiramiento observado `x`, se despeja `k` de la energía:
+
+```
+½ k x² = ½ m v₀² + m g x
+k = m (v₀² + 2 g x) / x²
+```
+
+#### A.4.4 Resolución manual del caso base
+
+Paso 1. Rigidez:
+
+```
+k = 50 × (24.866² + 2 × 9.81 × 0.40) / 0.40²
+  = 50 × (618.32 + 7.848) / 0.16
+  = 195 679 N/m
+```
+
+Paso 2. Frecuencia angular:
+
+```
+ω = sqrt(195679/50) = 62.559 rad/s
+```
+
+Paso 3. Tiempo del pico:
+
+```
+v₀ω/g = 24.866 × 62.559 / 9.81 = 158.58
+atan(158.58) = 1.5645 rad
+t_pico = (π − 1.5645) / 62.559
+       = 0.02521 s = 25.21 ms
+```
+
+Paso 4. Aceleración pico:
+
+```
+a_max = sqrt(9.81² + (195679/50) × 24.866²)
+      = 1555.2 m/s²
+      = 158.58 g
+```
+
+Paso 5. Fuerza pico y energía:
+
+```
+F_max = k x = 195679 × 0.40 = 78 271.6 N = 78.27 kN
+E     = ½ × 50 × 24.866² + 50 × 9.81 × 0.40
+      = 15 458 + 196.2 = 15 654.3 J = 15.65 kJ
+```
+
+Paso 6. Módulo implícito y deformación:
+
+```
+E_seda = k L / A = 195679 × 42 / 2.5×10⁻⁵
+       = 3.2874×10¹¹ Pa = 328.74 GPa
+ε = x/L = 0.40/42 = 0.009524 = 0.952 %
+σ = E_seda ε = 3.131 GPa
+```
+
+El módulo de 328.74 GPa está muy por encima del rango de la seda real
+(1–10 GPa), y el esfuerzo de 3.13 GPa supera su resistencia aproximada.
+
+#### A.4.5 Potencia pico: cómo calcularla a mano
+
+La potencia instantánea es:
+
+```
+P(t) = F(t) · ẋ(t) = k x(t) ẋ(t)
+```
+
+**No** es `F_max · v₀`: la fuerza máxima ocurre cuando `ẋ=0`, y la velocidad
+máxima cuando `x=0`. Para encontrar el máximo, se deriva.
+
+Con `z = ωt`:
+
+```
+A(z) = (g/ω)(1 − cos z) + v₀ sin z
+B(z) = (g/ω) sin z + v₀ cos z
+P(z) = (k/ω) A(z) B(z)
+```
+
+Derivando:
+
+```
+A'(z) = B(z)
+B'(z) = (g/ω) cos z − v₀ sin z
+dP/dz = (k/ω) [ B(z)² + A(z) B'(z) ]
+```
+
+El máximo cumple:
+
+```
+B(z)² + A(z) B'(z) = 0
+```
+
+Se resuelve por bisección o Newton en `z ∈ (0, ωt_pico)`. Para el caso base:
+
+```
+z ≈ 0.7895
+t = z/ω = 0.01262 s = 12.62 ms
+P_max = k x(t) ẋ(t) = 975 711 W = 0.976 MW
+```
+
+La cota `F_max · v₀ = 78.27 kN × 24.866 m/s = 1.947 MW` es solo una cota
+superior, no la potencia real.
+
+### A.5 Fase 3: momentos del cuerpo articulado
+
+Con el torso como anclaje y `a_t` positivo hacia arriba:
+
+```
+M_cuello = m_cabeza · r_cuello · (a_t + g)
+M_cadera = m_piernas · r_cadera · (a_t + g)
+```
+
+Para `m_cabeza=5 kg`, `r_cuello=0.18 m`, `m_piernas=20 kg`, `r_cadera=0.45 m`
+y `a_t=1555.2 m/s²`:
+
+```
+M_cuello = 5 × 0.18 × (1555.2 + 9.81) = 1408.5 N·m = 1.409 kN·m
+M_cadera = 20 × 0.45 × (1555.2 + 9.81) = 14 085 N·m = 14.09 kN·m
+```
+
+En caída libre `a_t = −g` y ambos momentos son cero, como debe ser.
+
+### A.6 Elasticidad y viabilidad
+
+Para una barra elástica:
+
+```
+k = E A / L
+E = k L / A
+ε = x/L
+σ = E ε
+```
+
+Criterios de viabilidad de la seda:
+
+```
+1 GPa ≤ E ≤ 10 GPa
+ε ≤ 0.30
+x ≤ 1.60 m
+```
+
+Los tres deben cumplirse. En el caso base falla `E`; en el escenario de 6 g
+falla `x`; en la seda real falla `x`. Por eso la región factible es vacía.
+
+### A.7 Impacto contra el suelo
+
+Si `x_max > 1.60 m`, el torso impacta antes de detenerse. El instante se
+obtiene resolviendo:
+
+```
+x(t) = 1.60
+```
+
+Como `x(t)` es monótona en `[0, t_pico]`, se puede usar bisección. La
+velocidad de impacto se obtiene por energía:
+
+```
+v_imp² = v₀² + 2 g (1.60) − (k/m)(1.60)²
+```
+
+Para el escenario de 6 g con aire (`k=272.37 N/m`):
+
+```
+x_max = 12.606 m > 1.60 m
+t_imp = 0.06378 s = 63.78 ms
+v_imp = 25.21 m/s
+```
+
+Es decir: la seda apenas alcanza a frenar antes de que el torso llegue al
+suelo.
+
+### A.8 HIC
+
+Para una aceleración `a` en g y una ventana `Δt`:
+
+```
+HIC = Δt · (a_media)^2.5,     Δt ≤ 36 ms
+```
+
+Para un pulso rectangular constante de altura `A` y duración `T`:
+
+```
+HIC = min(T, 0.036) · A^2.5
+```
+
+Caso base con `T=25.21 ms` y `A=158.58 g`:
+
+```
+158.58² = 25 147
+158.58^2.5 = 25 147 × sqrt(158.58) = 316 700
+HIC = 0.02521 × 316 700 ≈ 7 983
+```
+
+Con la forma real del pulso (triangular) el valor medido por el modelo baja a
+≈5 115. El escenario de 6 g durante 0.86 s tiene `HIC ≈ 3.2` en la ventana de
+36 ms; el valor ~70 que a veces se cita usa una ventana de 0.8 s, incompatible
+con la definición.
+
+### A.9 Resolución manual completa: tabla de pasos
+
+| Paso | Fórmula | Resultado base |
+|---|---|---:|
+| 1 | `c = ½ρCdA` | 0.36 kg/m |
+| 2 | `v_t = sqrt(mg/c)` | 36.91 m/s |
+| 3 | `t_f = (v_t/g) arccosh(e^{gH/v_t²})` | 3.0757 s |
+| 4 | `v₀ = v_t tanh(g t_f/v_t)` | 24.866 m/s |
+| 5 | `k = m(v₀²+2gx)/x²` | 195 679 N/m |
+| 6 | `ω = sqrt(k/m)` | 62.559 rad/s |
+| 7 | `t_pico = (π−atan(v₀ω/g))/ω` | 25.21 ms |
+| 8 | `a_max = sqrt(g²+(k/m)v₀²)` | 158.58 g |
+| 9 | `F_max = kx` | 78.27 kN |
+| 10 | `E = ½mv₀²+mgx` | 15.65 kJ |
+| 11 | `P_max = max(kxẋ)` | 0.976 MW |
+| 12 | `E_seda = kL/A` | 328.74 GPa |
+| 13 | `ε = x/L` | 0.952 % |
+| 14 | `M_cuello = m r (a_t+g)` | 1.409 kN·m |
+| 15 | `HIC` (pulso constante) | ≈7 983 |
+
+### A.10 Leicester a mano (sin aire)
+
+```
+v₀ = sqrt(2 × 9.81 × 42) = 28.706 m/s
+```
+
+Para `a_max=6 g`, se despeja `k` de `a_max² = g² + (k/m)v₀²`:
+
+```
+36g² = g² + (k/m)v₀²
+k = 35 m g² / v₀²
+  = 35 × 50 × 9.81² / 28.706²
+  = 204.375 N/m
+```
+
+El estiramiento sale de la energía:
+
+```
+k x² − 2 m g x − m v₀² = 0
+x = 16.80 m
+```
+
+Con `v₀²=2gH`, la ecuación se simplifica a `35x²−4Hx−4H²=0`, cuya raíz
+positiva es `x=0.4H=16.8 m`. Entonces:
+
+```
+E_seda = kL/A = 204.375 × 42 / 2.5×10⁻⁵ = 343.35 MPa
+ε = 16.8/42 = 40.0 %
+```
+
+Éste es el caso del paper. La diferencia 16.8 vs 16.7 es redondeo.
+
+### A.11 Escenario de 6 g con aire a mano
+
+Primero se calcula `v₀=24.866 m/s` como en A.3.2. Luego:
+
+```
+k = 35 m g² / v₀²
+  = 35 × 50 × 9.81² / 24.866²
+  = 272.37 N/m
+x = [mg + sqrt((mg)² + k m v₀²)] / k
+  = 12.606 m
+ε = 12.606/42 = 30.01 %
+E_seda = 272.37 × 42 / 2.5×10⁻⁵ = 457.6 MPa
+E_absorbida = ½mv₀² + mgx = 21.64 kJ
+```
+
+Aunque `E_seda` está dentro del rango permisivo, `x=12.6 m` excede el espacio
+libre de 1.6 m y la deformación del 30 % está en el límite de rotura.
+
+### A.12 Seda real: barrido manual
+
+Con `A=2.5×10⁻⁵ m²`, `L=42 m` y `v₀=24.866 m/s`:
+
+| `E` (GPa) | `k` (N/m) | `x` (m) | `ε` | `a_max` (g) | `v_imp` a 1.6 m (m/s) |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 595.2 | 8.08 | 19.2 % | 8.80 | 24.88 |
+| 5 | 2 976.2 | 3.39 | 8.08 % | 19.58 | 22.30 |
+| 10 | 5 952.4 | 2.36 | 5.63 % | 27.67 | 18.57 |
+
+Ninguna opción evita el suelo (`x>1.6 m`) y todas superan los 6 g. Ésa es la
+demostración numérica de que el problema no se arregla eligiendo otra seda.
+
+### A.13 Cómo se resuelve con los métodos numéricos
+
+| Problema | Método | Archivo | Tolerancia |
+|---|---|---|---|
+| `t_f`: raíz de `y(t)−H` | bisección, falsa posición, secante | `simulador/raices.py` | `1e-12` |
+| `t_impacto`: raíz de `x(t)−1.6` | bisección | `simulador/raices.py` | `1e-12` |
+| `k` crítico de 6 g | Newton / bisección | `simulador/raices.py` | `1e-9` |
+| Validar la caída | Euler, Heun, RK4, RKF45 | `simulador/edo.py` | `1e-8` |
+| Rigidez del resorte | Euler implícito | `simulador/edo.py` | estable |
+| Energía e impulso | trapecio, Simpson, Gauss, Romberg | `simulador/integracion.py` | `1e-10` |
+| Sistema articulado | LU, Thomas, Jacobi, Gauss-Seidel | `simulador/lineales.py` | `1e-10` |
+| Orientación `θ(t)` | spline cúbico | `simulador/interpolacion.py` | `1e-6` |
+
+La forma cerrada se usa para la app y las figuras; los métodos numéricos se
+usan para validar, comparar órdenes de convergencia y resolver los casos que
+no tienen forma cerrada (impacto, material no lineal, Monte Carlo).
+
+### A.14 Errores comunes al resolverlo a mano
+
+1. **Usar `F_max·v₀` como potencia.** La fuerza máxima y la velocidad máxima
+   no coinciden. Hay que maximizar `P(t)=kxẋ`.
+2. **Usar 20.8 kJ con aire.** Con aire el cuerpo recibe 15.65 kJ; 20.8 kJ es
+   la cota sin arrastre.
+3. **Calcular `t_pico` con `atan2(v₀ω,g)`.** El primer cero de la velocidad
+   es `(π−atan(v₀ω/g))/ω`.
+4. **Usar una ventana de HIC de 0.86 s.** La definición exige ≤36 ms.
+5. **Confundir el rango de `E` con la viabilidad.** Un módulo dentro de rango
+   no basta: también deben cumplirse `ε≤30 %` y `x≤1.6 m`.
+6. **Comparar `x=16.8 m` con `0.4 m`.** La comparación física es contra el
+   espacio libre de 1.60 m.
+7. **Decir que `a_max` no depende de la altura.** Depende de `v₀`, y `v₀`
+   depende de la altura y del arrastre.
+8. **Aplicar HIC al torso sin aclararlo.** HIC es un criterio de cabeza; en
+   este proyecto se usa como índice comparativo.
 
 ## 8. Referencias
 

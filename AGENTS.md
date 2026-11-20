@@ -20,8 +20,8 @@ real y diapositivas de sustentación.
   golpeen el suelo: el daño se evalúa por aceleración del torso y momento
   cervical/cadera.
 - Escenario Leicester (validación): sin aire, `H = 42`, `m = 50`, objetivo 6 g.
-- Escenario de supervivencia con aire: `k = 272.29 N/m`, `x = 12.61 m`,
-  `E = 457.4 MPa`, `ε = 30.0 %` (no es factible por el espacio libre de 1.60 m).
+- Escenario de supervivencia con aire: `k = 272.37 N/m`, `x = 12.61 m`,
+  `E = 457.6 MPa`, `ε = 30.0 %` (no es factible por el espacio libre de 1.60 m).
 
 Valores golden (ver `datos/referencia.csv`):
 
