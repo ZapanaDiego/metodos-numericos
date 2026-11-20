@@ -1,0 +1,36 @@
+cantidad,valor
+energia_kJ,15.654319338515412
+potencia_pico_MW,0.97571105890121
+tiempo_pico_ms,25.209999038449492
+a_max_g,158.5751206780368
+Trapecio n=4,1.038811e-01
+Trapecio n=8,2.576840e-02
+Trapecio n=16,6.429656e-03
+Trapecio n=32,1.606639e-03
+Trapecio n=64,4.016114e-04
+Trapecio n=128,1.003998e-04
+Simpson 1/3 n=4,4.559755e-03
+Simpson 1/3 n=8,2.691699e-04
+Simpson 1/3 n=16,1.659105e-05
+Simpson 1/3 n=32,1.033369e-06
+Simpson 1/3 n=64,6.453000e-08
+Simpson 1/3 n=128,4.032257e-09
+Simpson 3/8 n=6,2.009847e-03
+Simpson 3/8 n=12,1.193864e-04
+Simpson 3/8 n=24,7.370036e-06
+Simpson 3/8 n=48,4.592167e-07
+Simpson 3/8 n=96,2.867909e-08
+Boole n=8,1.686905e-05
+Boole n=16,2.475454e-07
+Boole n=32,3.809155e-09
+Boole n=64,5.929190e-11
+Boole n=128,9.252599e-13
+Gauss n n=1,1.141593e+00
+Gauss n n=2,6.418043e-02
+Gauss n n=3,1.388914e-03
+Gauss n n=4,1.577154e-05
+Gauss n n=5,1.102845e-07
+Gauss n n=6,5.227292e-10
+Gauss n n=8,6.661338e-15
+Gauss n n=10,0.000000e+00
+Gauss n n=12,6.661338e-16

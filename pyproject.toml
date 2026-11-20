@@ -1,0 +1,21 @@
+[project]
+name = "gwen-stacy-sim"
+version = "0.1.0"
+description = "Simulación numérica de la caída de Gwen Stacy"
+requires-python = ">=3.14"
+dependencies = [
+    "numpy==2.5.5",
+    "scipy==1.18.1",
+    "matplotlib==3.11.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "slow: pruebas lentas (Monte Carlo, GUI, render)",
+    "gui: pruebas que requieren DISPLAY",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:matplotlib.*",
+]

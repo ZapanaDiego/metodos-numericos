@@ -1,0 +1,11 @@
+cantidad,valor
+v0_con_aire_m_s,24.866137085213225
+k_6g_con_aire_n_m,272.3700912639194
+x_6g_con_aire_m,12.606009654242946
+deformacion_6g_con_aire,0.30014308700578446
+E_seda_6g_con_aire_pa,457581753.3233845
+k_6g_sin_aire_n_m,204.375
+x_6g_sin_aire_m,16.8
+espacio_libre_m,1.6000000000000014
+k_minimo_para_no_tocar_suelo_n_m,12693.5
+E_minimo_para_no_tocar_suelo_pa,21325080000.0

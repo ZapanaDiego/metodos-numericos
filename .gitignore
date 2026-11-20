@@ -1,0 +1,17 @@
+.venv/
+.commandcode/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+resultados/*.mp4
+resultados/*.gif
+docs/*.aux
+docs/*.log
+docs/*.nav
+docs/*.out
+docs/*.snm
+docs/*.toc
+.DS_Store
