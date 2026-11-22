@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
+import sys
 from math import cos, sin
 from time import perf_counter
 
@@ -15,6 +17,7 @@ from panda3d.core import (
 from simulador.mediciones import energias, primer_contacto, segmentos
 from simulador.modelo import inspeccionar_paso, simular
 from simulador.parametros import Computo, Escena
+from .animacion import avanzar_reloj
 from .panel_panda3d import (
     ACTIVO, ALTO, AMBAR, ANCHO, BLANCO, CIAN, ESCENA, MUTED, SUPERFICIE,
     TARJETA, Grafica, boton, rectangulo, texto,
@@ -202,7 +205,8 @@ class Visor(ShowBase):
         self.etapas = texto(self.modo_edo, 644, 433, tam=14, mutable=True)
         self.modo_edo.hide()
         self.b_edo = boton(self.panel, 632, 300, 107, 27, "Ver EDO", self._alternar_edo)
-        self.leyenda = texto(self.modo_grafico, 748, 318, tam=11, color=MUTED, mutable=True)
+        boton(self.panel, 746, 300, 166, 27, "Gráficas y tablas", self._abrir_laboratorio)
+        self.leyenda = texto(self.modo_grafico, 897, 290, tam=11, color=MUTED, mutable=True)
         self.estado = texto(self.panel, 632, 623, tam=12, color=MUTED, mutable=True)
 
         for tecla, accion in (("space", self._alternar), ("home", self._inicio),
@@ -289,6 +293,15 @@ class Visor(ShowBase):
             self.modo_edo.hide()
             self.modo_grafico.show()
         self._dibujar()
+
+    def _abrir_laboratorio(self):
+        _, postura = PISOS[self.indice_piso]
+        subprocess.Popen([
+            sys.executable, "-m", "visual.laboratorio_datos",
+            "--metodo", self.r.metodo, "--paso", str(self.r.paso_s),
+            "--piso", str(self.piso_m), "--postura", str(postura),
+            "--instante", str(self.t),
+        ])
 
     def _configurar_graficas(self):
         base = self.r.t_tensado_s if self.zoom_grafica else 0.0
@@ -386,9 +399,7 @@ class Visor(ShowBase):
         dt = min(0.05, ahora - self.ultimo_cuadro)
         self.ultimo_cuadro = ahora
         if self.play:
-            distancia = self.r.t_tensado_s - self.t
-            velocidad = 0.05 + 0.95 * np.clip(distancia / 0.24, 0, 1)**2
-            self.t = min(self.fin, self.t + dt * velocidad)
+            self.t = min(self.fin, avanzar_reloj(self.t, dt, self.r.t_tensado_s))
             self.play = self.t < self.fin
             self._dibujar()
         elif self.arrastre_x is not None:

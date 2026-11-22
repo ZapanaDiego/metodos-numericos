@@ -38,6 +38,11 @@ la pendiente de Euler o las cuatro pendientes de RK4 para el paso que
 empieza en la última muestra de integración alcanzada. El cálculo de las
 etapas comparte la función del integrador RK4.
 
+**Gráficas y tablas** abre el laboratorio de datos. La velocidad y la tensión
+usan el mismo eje de tiempo físico desde el inicio. Se puede ampliar con la
+rueda, desplazar con la barra de herramientas y filtrar la tabla al intervalo
+visible. El laboratorio abre con el método, el paso y el escenario actuales.
+
 ## Datos y render
 
 `simulador.modelo.simular()` devuelve un `Resultado` con muestras en segundos,
@@ -49,8 +54,9 @@ incluye también instantes de interés como el pico de potencia.
 
 El visor prepara una corrida al cambiar un control. La tarea Panda3D interpola
 esa corrida y los perfiles segmentarios usando un reloj de reproducción.
-Las muestras y los eventos conservan su tiempo físico cuando la cámara lenta
-reduce la velocidad de reproducción al 5 % cerca del tensado.
+Las muestras y los eventos conservan su tiempo físico. El reloj mantiene
+la velocidad de reproducción normal antes del tensado y pasa al 5 % al
+activarse el agarre.
 
 Al abrir o redimensionar la ventana, Panda3D actualiza la escala de la
 interfaz y el visor aplica el mismo encuadre al render 3D. El panel se

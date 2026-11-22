@@ -9,6 +9,13 @@ import numpy as np
 VELOCIDADES = (1.0, 0.5, 0.25, 0.1, 0.05)
 
 
+def avanzar_reloj(t, dt_real, tensado, velocidad=1.0):
+    """Mantiene el ritmo de caída y aplica cámara lenta a partir del agarre."""
+    hasta_tensado = max(0, tensado - t) / velocidad
+    antes = min(dt_real, hasta_tensado)
+    return t + antes * velocidad + (dt_real - antes) * min(velocidad, 0.05)
+
+
 @dataclass(frozen=True)
 class Estado:
     t: float
@@ -50,16 +57,9 @@ class Reproductor:
 
     @property
     def velocidad_efectiva(self) -> float:
-        # cámara lenta cinematográfica suave en la ventana de frenado
-        t_t = self.resultado.t_tensado_s
-        if self.t < t_t - 0.25:
+        if self.t < self.resultado.t_tensado_s:
             return self._velocidad
-        v_min = min(self._velocidad, 0.05)
-        if self.t <= t_t:
-            prog = (self.t - (t_t - 0.25)) / 0.25
-            factor = 0.5 * (1.0 + np.cos(np.pi * prog))
-            return float(v_min + (self._velocidad - v_min) * factor)
-        return v_min
+        return min(self._velocidad, 0.05)
 
     def estado(self, t: float | None = None) -> Estado:
         t = self.t if t is None else float(np.clip(t, 0.0, self.t_total))
@@ -69,7 +69,7 @@ class Reproductor:
         a_g = float(np.interp(t, r.t, np.abs(r.a_m_s2) / r.escena.gravedad_m_s2))
         f = float(np.interp(t, r.t, r.fuerza_n))
         p = float(np.interp(t, r.t, r.potencia_w))
-        fase = int(round(float(np.interp(t, r.t, r.fase))))
+        fase = int(t >= r.t_tensado_s)
         x = max(0.0, r.escena.h_ancla_m - r.escena.telarana.longitud_m - altura)
         return Estado(t, altura, v, a_g, f, p, fase, x, r.hic, r.semaforo)
 
@@ -89,7 +89,7 @@ class Reproductor:
 
     def avanzar(self, dt_real: float) -> Estado:
         if self.reproduciendo:
-            self.t += dt_real * self.velocidad_efectiva
+            self.t = avanzar_reloj(self.t, dt_real, self.resultado.t_tensado_s, self._velocidad)
             if self.t >= self.t_total:
                 self.t = self.t_total
                 self.reproduciendo = False

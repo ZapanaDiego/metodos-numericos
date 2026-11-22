@@ -21,3 +21,7 @@ resultados/panda_captura.png y tests/test_panel_panda3d.py.
 El evento de ventana llama primero a ShowBase.windowEvent para actualizar
 pixel2d. Después se recalcula el encuadre del DisplayRegion con el tamaño
 efectivo. El catálogo de Linux usa scripts/instalar_lanzador.py.
+
+laboratorio_datos.py abre la corrida activa en una ventana independiente.
+Comparte el eje temporal entre gráficas y filtra las muestras por intervalo.
+animacion.avanzar_reloj aplica cámara lenta desde el evento de tensado.

@@ -55,7 +55,7 @@ ampliada alrededor del tensado. La lectura de velocidad muestra
 
 | Control | Acción |
 |---|---|
-| **Reproducir / Pausar** | Controla el reloj de reproducción. Cerca del tensado, el visor reduce el ritmo hasta el 5 % para que el frenado sea visible. |
+| **Reproducir / Pausar** | Controla el reloj de reproducción. La cámara lenta comienza al tensarse la seda y reproduce el frenado al 5 %. |
 | **Inicio** | Vuelve al instante inicial y deja la corrida en pausa. |
 | **Avanzar un paso** | Salta a la siguiente muestra de la malla de integración o a una frontera entre fases. |
 | **Ir al tensado** | Pausa en el agarre abdominal y cambia a la vista lateral **Cuerpo**. |
@@ -64,6 +64,7 @@ ampliada alrededor del tensado. La lectura de velocidad muestra
 | **Escenario** | Selecciona el caso base o uno de los dos ejemplos de contacto con el piso. |
 | **Vista** | Alterna entre **Seguir**, **Cuerpo** y **Torre**. |
 | **Ampliar frenado** | Cambia la gráfica de velocidad de la caída completa, en segundos, al entorno del tensado, en milisegundos. |
+| **Gráficas y tablas** | Abre una ventana amplia con la corrida activa, gráficas interactivas y la tabla de muestras. |
 | **Ver EDO** | Muestra la ecuación activa y, en pausa, la pendiente del paso de Euler o las cuatro etapas de RK4. |
 | **Restablecer cámara** | Recupera el encuadre de la vista activa. |
 
@@ -80,6 +81,17 @@ error de altura. La gráfica cian corresponde al método activo y la ámbar
 a la solución analítica. La línea blanca indica el instante visible.
 La velocidad es positiva hacia abajo y su signo cambia cuando el torso sube.
 La aceleración del panel se expresa en `g`, con signo positivo hacia arriba.
+
+En **Gráficas y tablas**, la velocidad y la tensión comparten el eje de
+tiempo desde el inicio. La tensión de la seda es cero durante la caída
+previa al agarre. Gira la rueda sobre cualquiera de las curvas para ampliar
+alrededor del puntero. Usa **Pan** en la barra para desplazar la vista, o
+**Zoom** para seleccionar un rectángulo. **Caída completa** y **Frenado**
+recuperan esos intervalos. La tercera gráfica permite elegir altura,
+aceleración, elongación, potencia o energía. Un clic coloca el cursor
+en las tres gráficas. En **Tablas**, **Mostrar intervalo visible** filtra
+las muestras por el zoom actual y un doble clic lleva el cursor a esa fila.
+La ventana conserva el método, el paso y el escenario con los que se abrió.
 
 ![Visor Panda3D durante la caída, con los controles bajo el render y las mediciones a la derecha.](resultados/panda_caida.png)
 

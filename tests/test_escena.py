@@ -107,6 +107,12 @@ def test_velocidad_y_reinicio():
 def test_camara_lenta_automatica():
     r = simular(Escena.pelicula())
     rep = Reproductor(r)
+    rep.seek(r.t_tensado_s - 0.010)
+    assert rep.velocidad_efectiva == 1.0
+    rep.play()
+    estado = rep.avanzar(0.020)
+    assert estado.t == pytest.approx(r.t_tensado_s + 0.0005)
+    assert estado.fase == 1
     rep.seek(r.t_tensado_s)
     assert rep.velocidad_efectiva <= 0.05
 
