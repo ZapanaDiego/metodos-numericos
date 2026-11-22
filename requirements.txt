@@ -2,3 +2,4 @@ numpy==2.5.5
 scipy==1.18.1
 matplotlib==3.11.2
 pytest==9.2.0
+panda3d==1.10.16

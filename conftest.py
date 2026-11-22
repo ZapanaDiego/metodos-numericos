@@ -26,3 +26,10 @@ def rng():
     import numpy as np
 
     return np.random.default_rng(20261119)
+
+
+def pytest_collection_modifyitems(items):
+    """Selecciona como rápidas las pruebas sin marca de GUI o carga lenta."""
+    for item in items:
+        if not any(item.get_closest_marker(nombre) for nombre in ("slow", "gui")):
+            item.add_marker(pytest.mark.fast)

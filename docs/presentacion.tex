@@ -113,7 +113,7 @@
   \end{columns}
   \begin{itemize}
     \item Órdenes observados: 1, 2, 4.
-    \item \(h_{\text{crit}}=2/\omega=27.74\) ms.
+    \item Euler explícito multiplica la energía por \(1+(h\omega)^2\) en cada paso.
   \end{itemize}
 \end{frame}
 
@@ -206,6 +206,22 @@
 \begin{frame}
   \centering
   \Huge Preguntas
+\end{frame}
+
+\begin{frame}{Euler y RK4 en la caída}
+  \includegraphics[width=0.87\linewidth]{../resultados/e11_caida.png}
+  \begin{itemize}
+    \item Mismo resorte y mismas condiciones iniciales para la comparación.
+    \item El tensado y el primer cero de velocidad delimitan las fases.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Demo del laboratorio Panda3D}
+  \includegraphics[width=0.77\linewidth]{../resultados/panda_captura.png}
+  \begin{itemize}
+    \item Comparar método y paso. Pausar en el tensado y seguir el balance.
+    \item Los pisos alternativos dan una energía incidente estimada.
+  \end{itemize}
 \end{frame}
 
 \end{document}

@@ -55,7 +55,7 @@
 ## Lámina 8 — Convergencia y rigidez (60 s)
 
 - Figura e1: órdenes 1, 2, 4.
-- Figura e2: `h_crit = 27.74 ms`; Euler explícito diverge, implícito no.
+- Figura e2: el explícito introduce energía y el implícito la disipa.
 - Mensaje: el método importa tanto como la ecuación.
 
 ## Lámina 9 — Energía y potencia (60 s)
@@ -108,3 +108,16 @@
 
 - Limitaciones: modelo 1D, seda lineal, HIC comparativo.
 - Trabajo futuro: viscoelasticidad, modelo 3D del cuerpo, más orientaciones.
+
+
+## Demostración del laboratorio Panda3D (3 min)
+
+1. Formular las EDO por fase y calcular un paso de Euler y uno de RK4.
+2. Ejecutar `.venv/bin/python -m visual.app_panda3d`. Pulsar **Tensado**
+   y usar **Paso** para recorrer el pulso. Explicar por qué el pico de
+   potencia precede al pico de fuerza.
+3. Aumentar el paso a 4 ms y alternar Euler y RK4. Contrastar con
+   `e11_caida.png` y explicar el error a igual coste.
+4. Mostrar el agarre abdominal y la caída dorsal de perfil. Cambiar
+   **Escenario** para leer las condiciones estimadas y la energía incidente
+   del primer segmento que alcanza el piso.

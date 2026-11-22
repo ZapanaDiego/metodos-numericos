@@ -110,3 +110,9 @@ docs/          presentación
 2. El benchmark 3D no alcanza 25 fps y no hay fallback aceptado.
 3. Un supuesto físico del plan resulta falso (se consulta antes de seguir).
 4. La suite completa falla y no se identifica la causa en la iteración.
+
+## 8. Laboratorio de EDO
+El eje docente es Euler y Runge–Kutta aplicados a la caída y al frenado.
+Panda3D 1.10.16 aporta el visor acelerado y el control del personaje dorsal.
+El tablero de iteraciones está en docs/PLAN.md. Consultar las notas AGENTS.md
+del área activa y actualizar su evidencia al cierre de cada fase.

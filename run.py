@@ -21,6 +21,7 @@ EXPERIMENTOS = {
     "e8": "experimentos.e8_sensibilidad",
     "e9": "experimentos.e9_redondeo",
     "e10": "experimentos.e10_raices",
+    "e11": "experimentos.e11_caida",
     "b0": "experimentos.b0_benchmark3d",
     "b1": "experimentos.b1_benchmark_humanoide",
 }
@@ -62,6 +63,7 @@ def main(argv=None):
         for clave in EXPERIMENTOS:
             print(f"    {clave}: {EXPERIMENTOS[clave]}")
         print("  app: visual.app_tkinter")
+        print("  laboratorio: visual.app_panda3d")
         print("  mp4: visual.render_mp4")
         print("  tests: .venv/bin/python -m pytest -q")
         return

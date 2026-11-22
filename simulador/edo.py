@@ -115,6 +115,15 @@ def heun(f, y0, t_span, h, params=None) -> SolucionEDO:
     return SolucionEDO(t, _forma(y), fc.n)
 
 
+def etapas_rk4(f, t, y, h):
+    """Pendientes de las cuatro etapas del paso clásico de Runge–Kutta."""
+    k1 = f(t, y)
+    k2 = f(t + h / 2, y + h / 2 * k1)
+    k3 = f(t + h / 2, y + h / 2 * k2)
+    k4 = f(t + h, y + h * k3)
+    return k1, k2, k3, k4
+
+
 def rk4(f, y0, t_span, h, params=None) -> SolucionEDO:
     y0, t0, tf, h, n = _preparar(y0, t_span, h)
     fc = _Contador(f, params)
@@ -124,10 +133,7 @@ def rk4(f, y0, t_span, h, params=None) -> SolucionEDO:
     for i in range(n):
         paso = min(h, tf - t[i])
         ti, yi = t[i], y[i]
-        k1 = fc(ti, yi)
-        k2 = fc(ti + 0.5 * paso, yi + 0.5 * paso * k1)
-        k3 = fc(ti + 0.5 * paso, yi + 0.5 * paso * k2)
-        k4 = fc(ti + paso, yi + paso * k3)
+        k1, k2, k3, k4 = etapas_rk4(fc, ti, yi, paso)
         y[i + 1] = yi + (paso / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
         t[i + 1] = ti + paso
     return SolucionEDO(t, _forma(y), fc.n)

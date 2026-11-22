@@ -73,7 +73,7 @@ def posiciones(
 def perfil_momentos(resultado, cuerpo: Cuerpo, gravedad_m_s2: float = G):
     """Momentos a lo largo de la fase elástica, con ``a_t`` del modelo."""
     fase = resultado.fase == 1
-    a_t = np.maximum(resultado.a_m_s2[fase], 0.0)
+    a_t = resultado.a_m_s2[fase]
     m_cuello = cuerpo.masa_cabeza_kg * cuerpo.r_cuello_m * (a_t + gravedad_m_s2)
     m_cadera = cuerpo.masa_piernas_kg * cuerpo.r_cadera_m * (a_t + gravedad_m_s2)
     return resultado.t[fase], m_cuello, m_cadera

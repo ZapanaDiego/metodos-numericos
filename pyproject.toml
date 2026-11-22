@@ -7,12 +7,14 @@ dependencies = [
     "numpy==2.5.5",
     "scipy==1.18.1",
     "matplotlib==3.11.2",
+    "panda3d==1.10.16",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
 markers = [
+    "fast: pruebas del núcleo sin GUI ni cargas lentas",
     "slow: pruebas lentas (Monte Carlo, GUI, render)",
     "gui: pruebas que requieren DISPLAY",
 ]

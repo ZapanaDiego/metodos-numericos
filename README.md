@@ -1,21 +1,279 @@
-# La caída de Gwen Stacy: energía, potencia y latigazo
+# La caída de Gwen Stacy · Laboratorio de Euler y Runge–Kutta
 
-**Curso:** Métodos Numéricos
-**Autor:** Diego
-**Entregables:** informe técnico (este README), código documentado, app de escritorio con simulación 3D en tiempo real y diapositivas.
+**Curso** · Métodos Numéricos
 
----
+**Autor** · Diego
+
+El proyecto resuelve la caída con arrastre y el frenado por la seda con **Euler
+explícito y Runge–Kutta clásico de cuarto orden (RK4)**. El visor de escritorio
+en Panda3D muestra la trayectoria, las fuerzas y la energía mientras compara
+cada corrida con la solución analítica. La torre y la postura de espaldas se
+inspiran en la escena de la película. Las dimensiones y los parámetros físicos
+se tratan como estimaciones.
+
+## Abrir el simulador
+
+En Linux, busca **Gwen Stacy - Simulador 3D** en el catálogo de aplicaciones.
+Si estás preparando el proyecto en otra cuenta, [instala las dependencias](#7-ejecución-y-estructura)
+y registra la entrada. El instalador usa el Python del entorno virtual y abre
+el visor desde el directorio del proyecto.
+
+```bash
+.venv/bin/python scripts/instalar_lanzador.py
+.venv/bin/python -m visual.app_panda3d
+```
+
+## Velocidad y tensión durante la caída
+
+![Velocidad de la caída completa y ampliación del frenado junto con la tensión. El primer cero de velocidad ocurre a los 25.21 ms y coincide con la tensión máxima de 78.27 kN.](resultados/e11_velocidad_tension.png)
+
+En el caso base, el torso parte del reposo y alcanza **24.866 m/s** al
+tensarse la seda, unos **3.07567 s** después de iniciar la caída. El pulso de
+frenado ocupa apenas el **0.8 %** de ese tiempo. La ampliación permite ver qué
+ocurre dentro de ese intervalo. La línea dorada marca el tensado y la gris
+punteada marca el primer cero de velocidad.
+
+| Instante | Tiempo desde el tensado | Qué cambia |
+|---|---:|---|
+| Tensado | 0 ms | El torso baja a **24.866 m/s**. La elongación y la tensión empiezan en cero. |
+| Potencia pico | ≈12.62 ms | El producto de tensión y velocidad alcanza **0.976 MW**. |
+| Primera detención | **25.21 ms** | La velocidad llega a **0 m/s**. La seda alcanza **0.400 m**, **78.27 kN** y **15.654 kJ** almacenados. |
+| Retorno elástico | Después de 25.21 ms | La velocidad cambia de signo y el torso empieza a subir en el modelo de resorte. |
+
+Durante el frenado, el torso todavía baja mientras disminuye su velocidad.
+La seda sigue estirándose y su tensión aumenta. Al llegar a `v = 0`,
+la tensión es máxima y la potencia instantánea `P = Fv` vuelve a cero.
+Para explorar valores por instante, consulta el [CSV de la corrida RK4 con h = 1 ms](resultados/e11_perfiles.csv).
+
+![Visor pausado en el primer cero de velocidad, con el personaje de espaldas y los cursores de velocidad y tensión sincronizados.](resultados/panda_velocidad_cero.png)
+
+*Captura del visor en la primera detención. La gráfica de arriba ya está
+ampliada alrededor del tensado. La lectura de velocidad muestra
+**0.000 m/s** y la tensión está en su máximo.*
+
+## Cómo usar el laboratorio
+
+| Control | Acción |
+|---|---|
+| **Reproducir / Pausar** | Controla el reloj de reproducción. Cerca del tensado, el visor reduce el ritmo hasta el 5 % para que el frenado sea visible. |
+| **Inicio** | Vuelve al instante inicial y deja la corrida en pausa. |
+| **Avanzar un paso** | Salta a la siguiente muestra de la malla de integración o a una frontera entre fases. |
+| **Ir al tensado** | Pausa en el agarre abdominal y cambia a la vista lateral **Cuerpo**. |
+| **Euler / RK4** | Cambia el método que resuelve la misma EDO en cada fase. El botón activo se resalta. |
+| **Paso de integración `h`** | Cambia el tamaño de paso entre **0.25, 0.5, 1, 2, 4 y 8 ms**. |
+| **Escenario** | Selecciona el caso base o uno de los dos ejemplos de contacto con el piso. |
+| **Vista** | Alterna entre **Seguir**, **Cuerpo** y **Torre**. |
+| **Ampliar frenado** | Cambia la gráfica de velocidad de la caída completa, en segundos, al entorno del tensado, en milisegundos. |
+| **Ver EDO** | Muestra la ecuación activa y, en pausa, la pendiente del paso de Euler o las cuatro etapas de RK4. |
+| **Restablecer cámara** | Recupera el encuadre de la vista activa. |
+
+En pausa, **arrastra horizontalmente dentro del área 3D** para girar alrededor
+del punto de mira. Usa **la rueda** para acercarte o alejarte. La escena y
+las mediciones conservan el instante pausado. Al reanudar, la cámara recupera
+su seguimiento. Con el teclado, **Espacio** reproduce o pausa, **Inicio** reinicia
+y **→** avanza un paso. **Esc** cierra el visor.
+
+El panel se mantiene a la derecha del render incluso cuando el gestor abre
+la ventana en mosaico o la redimensiona. Las tarjetas muestran altura,
+velocidad, aceleración, tensión, elongación, energía elástica, potencia y
+error de altura. La gráfica cian corresponde al método activo y la ámbar
+a la solución analítica. La línea blanca indica el instante visible.
+La velocidad es positiva hacia abajo y su signo cambia cuando el torso sube.
+La aceleración del panel se expresa en `g`, con signo positivo hacia arriba.
+
+![Visor Panda3D durante la caída, con los controles bajo el render y las mediciones a la derecha.](resultados/panda_caida.png)
+
+## Cómo se comparan Euler y Runge–Kutta
+
+En caída se integra `(y', v') = (v, g − ρ Cd A v² / (2m))` desde el reposo.
+Para un paso manual de `h = 0.01 s`, Euler da `y₁ = 0` y
+`v₁ = 0.0981 m/s`. RK4 combina cuatro pendientes con pesos
+`(1, 2, 2, 1)/6` y obtiene `y₁ ≈ 0.0004905 m` con
+`v₁ ≈ 0.09810 m/s`. En `y = H` se localiza el cruce con un interpolante
+de Hermite. Luego se inicia la fase elástica desde `(x, v) = (0, v_tensado)`
+y se integra `(x', v') = (v, g − kx/m)` con el mismo `k` en ambas corridas.
+
+| Método con `h = 4 ms` | Elongación máxima | Error absoluto | Error relativo | Evaluaciones de la EDO |
+|---|---:|---:|---:|---:|
+| Euler | 0.485570 m | 0.085570 m | 21.39 % | 2 364 |
+| RK4 | 0.399993 m | 0.000007 m | 0.00175 % | 5 907 |
+| Referencia analítica | 0.400000 m | — | — | — |
+
+El [barrido de convergencia](resultados/e11_caida.csv) incluye tiempos,
+velocidad de tensado, elongación, fuerza, potencia y energía con cinco pasos
+entre 0.5 y 8 ms. El coste incluye las evaluaciones del integrador y las
+pendientes usadas para interpolar. La comparación a paso igual muestra la
+precisión por paso. La comparación a coste similar se lee en el eje de
+evaluaciones. El error global acumula el truncamiento durante la integración.
+Los cruces y picos también dependen de cómo se localizan entre pasos.
+
+![Comparación de error de elongación frente al tamaño de paso y al coste de Euler y RK4.](resultados/e11_caida.png)
+
+![Panel de ecuaciones durante el frenado, con las cuatro pendientes de RK4 y sus unidades.](resultados/panda_edo.png)
+
+## Resolución paso a paso del caso base
+
+### 1. Plantear la EDO de la caída
+
+Se mide el desplazamiento $y$ hacia abajo desde el punto inicial.
+La altura sobre el suelo es $z=43.60-y$. Al soltar el cuerpo,
+$y(0)=0$ y $v(0)=0$. El peso apunta hacia abajo y el arrastre hacia
+arriba durante la caída. La segunda ley de Newton da
+
+$$
+m\frac{dv}{dt}=mg-\frac12\rho C_d A v^2.
+$$
+
+Con $m=50\ \mathrm{kg}$, $\rho=1.20\ \mathrm{kg/m^3}$,
+$C_d A=0.60\ \mathrm{m^2}$ y $g=9.81\ \mathrm{m/s^2}$, el
+coeficiente del término cuadrático es $\rho C_d A/(2m)=0.0072\ \mathrm{m^{-1}}$.
+Se introducen las dos componentes del estado $Y=(y,v)$:
+
+$$
+Y'=f(Y)=(v,\ 9.81-0.0072v^2).
+$$
+
+### 2. Dar el primer paso con Euler y RK4
+
+Con $h=1\ \mathrm{ms}=0.001\ \mathrm{s}$, Euler evalúa una pendiente
+$k_1=f(Y_0)=(0,9.81)$ y aplica $Y_1=Y_0+h k_1$. Así obtiene
+$y_1=0$ y $v_1=0.009810\ \mathrm{m/s}$. El desplazamiento del primer
+paso es cero porque Euler usa la velocidad al inicio del intervalo.
+
+RK4 también arranca con $k_1=f(Y_0)$. Para calcular $k_2$, se estima
+el estado de mitad de paso como $Y_0+(h/2)k_1=(0,0.004905)$. Al evaluar
+la EDO allí se obtiene
+$k_2=(0.004905,9.81-0.0072(0.004905)^2)$. El procedimiento se repite
+con la pendiente nueva para $k_3$ y luego al final del paso para $k_4$.
+
+| Etapa | Estado donde se evalúa | Pendiente de posición (m/s) | Pendiente de velocidad (m/s²) |
+|---|---|---:|---:|
+| $k_1$ | $Y_0$ | 0 | 9.81000000 |
+| $k_2$ | $Y_0+(h/2)k_1$ | 0.00490500 | 9.80999983 |
+| $k_3$ | $Y_0+(h/2)k_2$ | 0.00490500 | 9.80999983 |
+| $k_4$ | $Y_0+h k_3$ | 0.00981000 | 9.80999931 |
+
+Se combina $Y_1=Y_0+(h/6)(k_1+2k_2+2k_3+k_4)$. El resultado es
+$y_1\approx 0.000004905\ \mathrm{m}$ y
+$v_1\approx 0.009810\ \mathrm{m/s}$. Cada método vuelve a aplicar su
+regla al estado obtenido y continúa hasta encontrar el cruce $y=42.00\ \mathrm{m}$.
+
+### 3. Encontrar el tensado y calibrar la seda
+
+Cuando dos muestras encierran el cruce, el programa construye un interpolante
+de Hermite con los estados y sus pendientes. Busca dentro del intervalo la
+raíz de $y(t)-42.00=0$ y evalúa allí la velocidad. Con pasos de 1 ms,
+Euler obtiene $t=3.076085\ \mathrm{s}$ y $v=24.869960\ \mathrm{m/s}$.
+RK4 obtiene $t=3.075674\ \mathrm{s}$ y $v=24.866137\ \mathrm{m/s}$.
+
+Para verificar el resultado, se calcula primero la velocidad terminal
+$v_t=\sqrt{g/0.0072}\approx36.91\ \mathrm{m/s}$. La solución cerrada
+de la caída da
+$t_f=(v_t/g)\operatorname{arcosh}[\exp(gH/v_t^2)]$ y
+$v_0=v_t\tanh(g t_f/v_t)$. Con $H=42.00\ \mathrm{m}$ se recupera
+$v_0=24.866137\ \mathrm{m/s}$.
+
+Para calibrar la seda, se fija la elongación máxima en 0.40 m. El trabajo
+de la gravedad durante ese tramo se suma a la energía cinética al tensarse:
+
+$$
+\tfrac12 k(0.40)^2
+=\tfrac12(50)(24.866137)^2+(50)(9.81)(0.40)
+=15\,654.32\ \mathrm{J}.
+$$
+
+Al despejar se obtiene $k=195\,679\ \mathrm{N/m}$. Este valor se usa en
+ambas corridas. Cada una conserva su propia velocidad numérica de tensado,
+de modo que la comparación también refleja el error que trae desde la caída.
+
+### 4. Integrar el frenado hasta el primer cero de velocidad
+
+Se reinicia el reloj local al tensarse la seda. El estado es ahora
+$X=(x,v)$, donde $x$ es la elongación. Del peso $mg$ y la tensión
+ascendente $kx$ resulta
+
+$$
+x'=v,\qquad v'=g-\frac{k}{m}x=9.81-3913.58x.
+$$
+
+Euler parte de $X_0=(0,24.869960)$. En ese instante la seda todavía tiene
+elongación cero, así que la pendiente es $(24.869960,9.81)$. Con
+$h=0.001\ \mathrm{s}$ obtiene $x_1=0.024870\ \mathrm{m}$ y
+$v_1=24.879770\ \mathrm{m/s}$. La aceleración cambia de signo una vez
+que la tensión supera el peso. Euler evalúa ese efecto a partir del paso
+siguiente.
+
+RK4 parte de $X_0=(0,24.866137)$. Su primera pendiente es
+$(24.866137,9.81)$. A mitad del paso, la estimación
+$x\approx0.012433\ \mathrm{m}$ ya produce una aceleración de
+$9.81-3913.58(0.012433)\approx-38.85\ \mathrm{m/s^2}$. Por eso el
+efecto del resorte entra en el primer paso de RK4.
+
+| Etapa de RK4 | $x'$ (m/s) | $v'$ (m/s²) |
+|---|---:|---:|
+| $k_1$ | 24.866137 | 9.810000 |
+| $k_2$ | 24.871042 | −38.847806 |
+| $k_3$ | 24.846713 | −38.857404 |
+| $k_4$ | 24.827280 | −87.429596 |
+
+Con los mismos pesos de la primera fase se obtiene
+$x_1=0.024855\ \mathrm{m}$ y $v_1=24.827299\ \mathrm{m/s}$.
+Se siguen dando pasos hasta encerrar el primer cruce de $v=0$ y se
+refina la raíz dentro del intervalo. Ese cruce marca la elongación máxima.
+La solución analítica lo verifica con
+$\omega=\sqrt{k/m}$ y $t_{\mathrm{pico}}=(\pi-\arctan(v_0\omega/g))/\omega$.
+
+### 5. Obtener y comprobar las respuestas
+
+| Resultado con $h=1$ ms | Euler | RK4 | Referencia analítica |
+|---|---:|---:|---:|
+| Tiempo desde el tensado hasta $v=0$ | 25.24258 ms | 25.21000 ms | 25.21000 ms |
+| Elongación máxima | 0.420074 m | 0.400000 m | 0.400000 m |
+| Tensión máxima | 82.200 kN | 78.272 kN | 78.272 kN |
+| Aceleración pico hacia arriba | 166.583 g | 158.575 g | 158.575 g |
+| Potencia pico de la seda | 1.02602 MW | 0.97571 MW | 0.97571 MW |
+| Energía máxima en la seda | 17.265 kJ | 15.654 kJ | 15.654 kJ |
+
+1. **Altura.** Se resta la caída y la elongación a la altura inicial.
+   En la referencia, $43.60-42.00-0.40=1.20\ \mathrm{m}$.
+2. **Fuerza y aceleración.** Se evalúa $F=kx$ y se resta el peso para
+   hallar la aceleración neta hacia arriba. En el pico,
+   $F=78\,271.60\ \mathrm{N}$ y
+   $a/g=(F/50-9.81)/9.81=158.575$.
+3. **Energía.** Se reemplaza $x_{\max}$ en $kx_{\max}^2/2$.
+   Los **15.654 kJ** se componen de **15.458 kJ** cinéticos al tensarse
+   y **0.196 kJ** de trabajo de la gravedad durante la elongación.
+4. **Potencia.** Se calcula $P(t)=kx(t)v(t)$ a lo largo del frenado
+   y se localiza el máximo cerca de los **12.62 ms**. En el tensado
+   $x=0$ y en la primera detención $v=0$, así que en ambos instantes
+   la potencia es cero.
+5. **Momento cervical.** Con 5 kg de masa de cabeza, brazo de 0.18 m
+   y $a_t=1555.62\ \mathrm{m/s^2}$ hacia arriba, el modelo estima
+   $M=5(0.18)(1555.62+9.81)\approx1409\ \mathrm{N\,m}$.
+6. **Error numérico.** Para la elongación de Euler se obtiene
+   $|0.420074-0.400000|=0.020074\ \mathrm{m}$, equivalente al
+   **5.02 %** de la referencia. El [barrido](resultados/e11_caida.csv)
+   muestra cómo disminuye el error al reducir el paso.
+
+Para repetir los cálculos sin aire se anula el coeficiente de arrastre en la EDO de caída:
+la condición $y=42$ da $v_0=\sqrt{2g(42)}=28.7061\ \mathrm{m/s}$.
+Si además se fija el objetivo de aceleración en 6 g, se despeja la rigidez
+con $k=m((6g)^2-g^2)/v_0^2$. Con aire resulta $k=272.37\ \mathrm{N/m}$
+y el balance de energía da 12.61 m de elongación. El espacio disponible
+en el caso base es 1.60 m. El [anexo de resolución manual](#anexo-a--modelo-matemático-y-resolución-manual)
+desarrolla estos escenarios y el cálculo del índice HIC equivalente.
 
 ## 1. Introducción y pregunta
 
 ¿Cuánta energía recibió el cuerpo de Gwen Stacy y por qué esa energía no pudo
 liberarse de forma gradual?
 
-La respuesta corta es que **la energía no es el problema: lo es la tasa a la que
-se entrega**. En el escenario de la película el cuerpo llega al tensado con
-unos **15.7 kJ** de energía cinética (20.8 kJ si se ignora el aire) y debe
-disiparlos en una fracción de segundo. La potencia pico real es del orden de
-**1 MW** y la aceleración pico de **158.6 g** con arrastre, o **211 g** sin aire.
+En el caso base, el torso llega al tensado con **15.458 kJ** de energía
+cinética. Durante los siguientes 0.40 m, la gravedad aporta otros
+**0.196 kJ**. El resorte ideal almacena la suma, **15.654 kJ**, en unos
+**25 ms**. El frenado en una distancia tan corta lleva la potencia pico
+a unos **0.976 MW** y la aceleración pico a **158.58 g**. En el caso sin aire
+calibrado para la misma elongación, la aceleración pico alcanza **211 g**.
 
 El proyecto reproduce la escena con tres modelos:
 
@@ -42,9 +300,9 @@ La escena se fija con cuatro datos coherentes:
 |---|---:|---|
 | Altura del ancla | 43.60 m | repisa inferior de la torre |
 | Longitud tensa de la seda | 42.00 m | dato de la escena |
-| Estiramiento observado | 0.40 m | dato de la escena |
+| Estiramiento de calibración | 0.40 m | estimación de la escena |
 | Altura final del torso | 1.20 m | `43.60 − 42.00 − 0.40` |
-| Masa del cuerpo | 50 kg | Emma Stone ≈ 52 kg; Leicester usa 50 |
+| Masa del cuerpo | 50 kg | supuesto de la simulación, consistente con Leicester |
 | `Cd·A` base | 0.60 m² | caída de espaldas/plana |
 | Densidad del aire | 1.20 kg/m³ | aire a ~20 °C |
 
@@ -169,14 +427,31 @@ definición).
 | `x_max` | 0.40 m |
 | `a_max` | 158.58 g |
 | `F_max` | 78.27 kN (160× el peso) |
-| `E` absorbida | 15.654 kJ |
+| Energía almacenada por la seda | 15.654 kJ |
 | `P_pico` real | 0.9757 MW |
 | `t_pico` | 25.21 ms |
 | `E` implícito de la seda | 328.74 GPa |
 | `ε` | 0.95 % |
 | `M_cuello` | 1.41 kN·m |
+| `M_cadera` | 14.09 kN·m |
+| HIC equivalente del torso | 5 115 |
 
 ### 3.2 Validación de Leicester (sin aire)
+
+Hay dos corridas sin aire. La calibración a `x_max = 0.40 m` aísla el
+efecto del arrastre respecto del caso base. La validación de Leicester
+usa el mismo descenso de 42 m y fija una aceleración objetivo de 6 g.
+
+| Magnitud para el frenado calibrado a 0.40 m | Valor sin aire |
+|---|---:|
+| Velocidad al tensarse | 28.706 m/s |
+| Rigidez | 259 965 N/m |
+| Aceleración pico | 211.0 g |
+| Tensión máxima | 103.99 kN |
+| Energía en la seda | 20.797 kJ |
+| Potencia pico | 1.495 MW |
+| Tiempo hasta el primer cero de velocidad | 21.85 ms |
+| Módulo implícito de la seda | 436.74 GPa |
 
 | Magnitud | Proyecto | Paper |
 |---|---:|---:|
@@ -196,8 +471,8 @@ energético, `x = 0.4 H = 16.8 m`.
 | `k` | 272.37 N/m |
 | `x_max` | 12.61 m |
 | `ε` | 30.0 % |
-| `E` implícito | 457.4 MPa |
-| `E` absorbida | 21.65 kJ |
+| `E` implícito | 457.6 MPa |
+| Energía almacenada por la seda | 21.641 kJ |
 | `F_max` | 3.43 kN |
 | `M_cuello` | 61.8 N·m |
 | HIC (36 ms) | 3.2 |
@@ -217,9 +492,10 @@ de la seda dragline.
 | Interpolación | Lagrange, Newton, spline cúbico, mínimos cuadrados | `simulador/interpolacion.py` |
 | Errores | error absoluto/relativo, orden observado, Richardson | `simulador/errores.py` |
 
-La app y los experimentos usan **formas cerradas** para la física y los
-integradores numéricos para validar, comparar y demostrar convergencia. El
-bucle de dibujo nunca integra: solo interpola una trayectoria precalculada.
+`simular()` produce la referencia analítica y las corridas numéricas de
+Euler y RK4. El visor precalcula la trayectoria al seleccionar un método,
+un paso o un escenario. El bucle de dibujo interpola la corrida y sus
+mediciones con el reloj de reproducción.
 
 ---
 
@@ -249,14 +525,9 @@ tolerancia.
 
 ### 4.3 Rigidez (e2)
 
-El benchmark `b0` midió 33.6 fps a 800×600 con ~200 polígonos y 7 segmentos;
-como supera el umbral de 25 fps, la app usa `mplot3d` y no necesita el fallback
-OpenGL.
-
 ![Rigidez](resultados/e2_rigidez.png)
 
-El umbral teórico es `h_crit = 2/ω = 27.74 ms`. Euler explícito diverge para
-`h > h_crit`; Euler implícito permanece estable para todos los pasos probados.
+Para el oscilador conservativo, Euler explícito multiplica la energía por $1+(hω)^2$ en cada paso. Euler implícito la divide por ese mismo factor.
 
 ### 4.4 Energía, potencia y HIC (e3)
 
@@ -331,17 +602,33 @@ Con `n = 2000` y semilla 42: `a_max` mediana 158.8 g, HIC mediano 7 989,
 `x` mediano 0.40 m y **100 %** de las ejecuciones con HIC > 700. El percentil 5
 de `a_max` sigue muy por encima de 6 g.
 
-### 4.9 Interfaz 3D
+### 4.9 Interfaz 3D y escenarios de contacto
 
-![Interfaz de la app](resultados/app_captura.png)
+![Visor Panda3D de perfil durante el frenado, con la gráfica de velocidad completa y la de tensión desde el tensado.](resultados/panda_captura.png)
 
-La app de escritorio usa un tema oscuro pizarra + cian, un maniquí low-poly
-articulado (cabeza, cuello, torso, brazos, manos, piernas y pies), una seda
-dorada que se une a la cintura y tres encuadres: **Seguir**, **Cuerpo** y
-**Torre**. Cada variable tiene símbolo, unidad y un tooltip; el panel muestra
-los valores derivados y el veredicto (letal/supervivencia). El benchmark `b1`
-dio 37 fps a 800×600 con el maniquí completo, por lo que no fue necesario el
-fallback OpenGL.
+La escena de Panda3D usa una torre a escala, un personaje procedural y una
+seda que se ancla al abdomen. El nodo del torso sigue la trayectoria del
+modelo de caída. Durante el frenado, dos osciladores angulares aproximan
+el movimiento de cabeza y piernas. La inclinación previa y el vuelo de la
+punta de la seda forman parte de la animación.
+
+| Escenario del visor | Piso | Postura de piernas al iniciar el frenado | Primer contacto monitoreado | Energía cinética incidente |
+|---|---:|---|---|---:|
+| Base | 0.00 m | Horizontal | Sin contacto | — |
+| Alternativa 1 | +1.00 m | Elevadas 0.50 rad | Cabeza | 0.934 kJ |
+| Alternativa 2 | +0.85 m | Horizontal | Piernas | 4.841 kJ |
+
+Las dos alternativas usan RK4 con `h = 1 ms`. La energía incidente suma
+la traslación del centro de masa y la rotación del segmento antes del
+contacto. El visor detiene allí la corrida alternativa. La energía que
+absorben el cuerpo y la superficie queda indeterminada con este modelo.
+
+**Rendimiento y ventana.** La prueba de 180 cuadros en una AMD Radeon 860M a
+1100×700 registró **60.0 FPS**, con **17.1 ms** en el percentil 95 del tiempo
+por cuadro. También se comprobó la apertura en mosaico y el redimensionado
+en 900×600, 700×820 y 1400×800. El visor reescala el panel y la región 3D
+juntos. La [guía técnica](docs/panda3d.md) documenta los ejes y el contrato de
+datos, y el [plan](docs/PLAN.md) conserva la evidencia por iteración.
 
 ### 4.10 Sensibilidad (e8)
 
@@ -388,7 +675,9 @@ razón entre errores sucesivos es ≈2, como corresponde.
 
 ### 5.4 Limitaciones
 
-- El modelo es 1D en la fase de caída y cuasiestático en el articulado.
+- La caída principal es unidimensional. Los momentos de cuello y cadera
+  son estimaciones cuasiestáticas. La extensión segmentaria integra dos
+  osciladores angulares forzados por el torso.
 - La seda se modela como resorte lineal; la seda real es viscoelástica y tiene
   una deformación de rotura finita.
 - El HIC se usa como índice comparativo, no como diagnóstico clínico.
@@ -399,9 +688,9 @@ razón entre errores sucesivos es ≈2, como corresponde.
 
 ## 6. Conclusiones
 
-1. **La energía no mata por sí sola.** El cuerpo recibe 15.7 kJ con aire
-   (20.8 kJ sin aire) y debe disiparlos en ~25 ms. La potencia pico real es
-   ~1 MW.
+1. **El frenado concentra la transferencia de energía.** En el caso base
+   la seda almacena 15.654 kJ hasta la primera detención, a los 25.21 ms.
+   La potencia pico es 0.976 MW.
 2. **La geometría no da margen.** Con 1.60 m hasta el suelo, cualquier seda
    que evite el impacto debe ser más rígida que la seda real y aun así impone
    ≥40 g. Cualquier seda real se estira más de 1.6 m y el torso impacta.
@@ -410,17 +699,18 @@ razón entre errores sucesivos es ≈2, como corresponde.
 4. **El latigazo es el mecanismo final.** Con el anclaje en el torso, el
    momento cervical alcanza ~1.4 kN·m, muy por encima del rango de tolerancia.
    La cabeza y las piernas no necesitan golpear el suelo para explicar el daño.
-5. **El modelo numérico es consistente.** Leicester se reproduce, los órdenes
-   de convergencia coinciden con la teoría, el sistema rígido exige métodos
-   implícitos y Monte Carlo confirma que el resultado es robusto.
+5. **La elección del integrador cambia la precisión del frenado.** RK4
+   aproxima la elongación analítica con menos error que Euler a igual paso.
+   En el oscilador de control, Euler explícito amplifica la energía y Euler
+   implícito introduce amortiguamiento numérico.
 
 ---
 
 ## 7. Ejecución y estructura
 
 ```bash
-# entorno
-python3 -m venv .venv
+# entorno con Python 3.14
+python3.14 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
 # suite completa
@@ -437,6 +727,8 @@ python3 -m venv .venv
 .venv/bin/python -m experimentos.e8_sensibilidad
 .venv/bin/python -m experimentos.e9_redondeo
 .venv/bin/python -m experimentos.e10_raices
+.venv/bin/python -m experimentos.e11_caida
+.venv/bin/python -m scripts.capturas_readme
 .venv/bin/python -m experimentos.b1_benchmark_humanoide
 
 # escenarios
@@ -444,7 +736,12 @@ python3 -m venv .venv
 .venv/bin/python run.py --escenario leicester
 .venv/bin/python run.py --escenario supervivencia
 
-# app 3D y MP4
+# visor principal, benchmark en ventana y lanzador para Linux
+.venv/bin/python -m visual.app_panda3d
+.venv/bin/python -m visual.app_panda3d --ventana --medir 180
+.venv/bin/python scripts/instalar_lanzador.py
+
+# visor clásico y exportación MP4
 .venv/bin/python -m visual.app_tkinter
 .venv/bin/python -m visual.render_mp4 --semilla 42 --salida resultados/pelicula.mp4
 ```
@@ -457,9 +754,10 @@ Proyectofinal/
 ├── requirements.txt
 ├── pyproject.toml
 ├── simulador/                física y métodos numéricos
-├── experimentos/             e1-e8 y benchmark b0
-├── visual/                   escena 3D, reproductor, MP4 y app Tk
-├── tests/                    suite completa + valores golden
+├── experimentos/             e1–e11 y benchmarks clásicos
+├── visual/                   visor Panda3D, app Tk y exportación MP4
+├── scripts/                  lanzador, capturas y verificación
+├── tests/                    suite completa y valores de referencia
 ├── datos/referencia.csv      valores congelados
 ├── resultados/               figuras y tablas
 └── docs/                     presentación
@@ -467,9 +765,10 @@ Proyectofinal/
 
 ### Reproducibilidad
 
+- La [presentación de sustentación](docs/presentacion.md) incluye una demostración de los controles y de la comparación numérica.
 - Semilla fija en Monte Carlo (`numpy.random.Generator`).
 - Sin estado global; cada ejecución crea su propio generador.
-- `datos/referencia.csv` se verifica en cada corrida de la suite.
+- La suite verifica los [valores congelados](datos/referencia.csv).
 - Las figuras del informe se versionan; el MP4 se regenera con el comando de
   arriba.
 
@@ -1017,16 +1316,17 @@ demostración numérica de que el problema no se arregla eligiendo otra seda.
 | Sistema articulado | LU, Thomas, Jacobi, Gauss-Seidel | `simulador/lineales.py` | `1e-10` |
 | Orientación `θ(t)` | spline cúbico | `simulador/interpolacion.py` | `1e-6` |
 
-La forma cerrada se usa para la app y las figuras; los métodos numéricos se
-usan para validar, comparar órdenes de convergencia y resolver los casos que
-no tienen forma cerrada (impacto, material no lineal, Monte Carlo).
+El laboratorio integra las fases con Euler y RK4 y compara contra las
+formas cerradas. El interpolante ubica los eventos de cada trayectoria
+numérica. Los experimentos complementarios exploran métodos de raíces,
+cuadratura, estabilidad y sensibilidad.
 
 ### A.14 Errores comunes al resolverlo a mano
 
 1. **Usar `F_max·v₀` como potencia.** La fuerza máxima y la velocidad máxima
    no coinciden. Hay que maximizar `P(t)=kxẋ`.
-2. **Usar 20.8 kJ con aire.** Con aire el cuerpo recibe 15.65 kJ; 20.8 kJ es
-   la cota sin arrastre.
+2. **Mezclar las energías con y sin aire.** La seda almacena 15.654 kJ con
+   arrastre y 20.797 kJ sin aire para la misma elongación de 0.40 m.
 3. **Calcular `t_pico` con `atan2(v₀ω,g)`.** El primer cero de la velocidad
    es `(π−atan(v₀ω/g))/ω`.
 4. **Usar una ventana de HIC de 0.86 s.** La definición exige ≤36 ms.
