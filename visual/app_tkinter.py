@@ -56,7 +56,7 @@ class App:
 
         self.modelo = ParametrosVista()
         self.resultado = self.modelo.simular()
-        self.rep = Reproductor(self.resultado, fps=20)
+        self.rep = Reproductor(self.resultado, fps=60)
         self._guard = False
         self._dirty = False
         self._after_id = None
@@ -66,6 +66,7 @@ class App:
         self.vista = tk.StringVar(value="Seguir")
 
         self._construir()
+        self._actualizar_derivados()
         self._actualizar_todo()
         self._tick()
 
@@ -91,8 +92,19 @@ class App:
         self._pestana_graficas()
         self._pestana_modelo()
         self._pestana_monte_carlo()
+        self.notebook.bind("<<NotebookTabChanged>>", self._al_cambiar_pestana)
 
         self._pie()
+
+    def _al_cambiar_pestana(self, _event=None):
+        try:
+            tab = self.notebook.index("current")
+        except Exception:
+            tab = 0
+        if tab == 0:
+            self._actualizar_escena()
+        elif tab == 1:
+            self._actualizar_graficas()
 
     def _cabecera(self):
         barra = tk.Frame(self.root, bg=PALETA["fondo"], height=74)
@@ -548,13 +560,14 @@ LECTURA RÁPIDA
             messagebox.showerror("Error de simulación", str(exc))
             return
         self.resultado = resultado
-        self.rep = Reproductor(resultado, fps=20)
+        self.rep = Reproductor(resultado, fps=60)
         self.tiempo_scale.configure(to=self.rep.t_total)
         self._reconstruir_escena()
         self._reconstruir_graficas()
         self._dirty = False
         self.estado_label.configure(text="Simulación lista", fg=PALETA["exito"])
         self.rep.play()
+        self._actualizar_derivados()
         self._actualizar_todo()
 
     def pausar(self):
@@ -656,8 +669,6 @@ LECTURA RÁPIDA
 
     def _actualizar_escena(self):
         est = self.rep.estado()
-        if self.vista.get().lower() == "seguir":
-            self.escena.aplicar_vista("seguir", est.altura_torso)
         self.escena.actualizar(est.__dict__, self.rep.trayectoria_hasta())
         self.canvas3d.draw_idle()
 
@@ -731,10 +742,18 @@ LECTURA RÁPIDA
             self.tiempo.set(self.rep.t)
         finally:
             self._guard = False
-        self._actualizar_escena()
+
+        try:
+            tab = self.notebook.index("current")
+        except Exception:
+            tab = 0
+
+        if tab == 0:
+            self._actualizar_escena()
+        elif tab == 1:
+            self._actualizar_graficas()
+
         self._actualizar_hud()
-        self._actualizar_graficas()
-        self._actualizar_derivados()
         self.mode_label.configure(text=f"modo: {'calibración (x)' if self.modelo.modo == 'calibracion' else 'material (k)'}")
 
     def _tick(self):
@@ -744,7 +763,9 @@ LECTURA RÁPIDA
         if self.rep.reproduciendo:
             self.rep.avanzar(dt)
             self._actualizar_todo()
-        self._after_id = self.root.after(50, self._tick)
+        t_proc = time.perf_counter() - ahora
+        ms_espera = max(2, int((1.0 / 60.0 - t_proc) * 1000))
+        self._after_id = self.root.after(ms_espera, self._tick)
 
     def cerrar(self):
         if self._after_id is not None:

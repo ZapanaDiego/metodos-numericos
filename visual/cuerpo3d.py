@@ -31,12 +31,13 @@ def _base_perpendicular(axis: np.ndarray) -> np.ndarray:
 
 
 class MallaCapsula:
-    """Cápsula/cono truncado orientado entre dos puntos."""
+    """Cápsula/cono truncado orientado entre dos puntos con sombreado vectorizado."""
 
     def __init__(self, ax, color: str, n_lados: int = 8, alpha: float = 1.0, luz=(0.35, -0.55, 0.75)):
         self.ax = ax
         self.n = n_lados
         self.color = np.array(to_rgb(color))
+        self.alpha = float(alpha)
         self.luz = np.asarray(luz, dtype=float) / np.linalg.norm(luz)
         self.collection = Poly3DCollection(
             [],
@@ -48,6 +49,17 @@ class MallaCapsula:
         self.collection.set_zsort("average")
         ax.add_collection3d(self.collection)
 
+        angulos = np.linspace(0, 2 * np.pi, self.n, endpoint=False)
+        self._circulo = np.column_stack([np.cos(angulos), np.sin(angulos)])
+        self._anillos = np.array([0.0, 0.35, 0.7, 1.0])
+        quad_indices = []
+        for k in range(len(self._anillos) - 1):
+            for i in range(self.n):
+                j = (i + 1) % self.n
+                quad_indices.append([k * self.n + i, k * self.n + j, (k + 1) * self.n + j, (k + 1) * self.n + i])
+        self._quad_indices = np.array(quad_indices)
+        self._cap_col = np.array([list(self.color) + [self.alpha], list(self.color) + [self.alpha]])
+
     def actualizar(self, p0, p1, r0: float, r1: float):
         p0 = np.asarray(p0, dtype=float)
         p1 = np.asarray(p1, dtype=float)
@@ -58,36 +70,36 @@ class MallaCapsula:
             return
         u = eje / largo
         v = np.cross(u, _base_perpendicular(u))
-        if np.linalg.norm(v) < 1e-9:
+        v_norm = np.linalg.norm(v)
+        if v_norm < 1e-9:
             v = np.cross(u, np.array([1.0, 0.0, 0.0]))
-        v /= np.linalg.norm(v)
+            v_norm = np.linalg.norm(v)
+        v /= v_norm
         w = np.cross(u, v)
-        angulos = np.linspace(0, 2 * np.pi, self.n, endpoint=False)
-        circulo = np.column_stack([np.cos(angulos), np.sin(angulos)])  # (n,2)
-        anillos = [0.0, 0.35, 0.7, 1.0]
-        radios = np.interp(anillos, [0.0, 1.0], [r0, r1])
-        vertices = []
-        for t, r in zip(anillos, radios, strict=True):
-            centro = p0 + t * eje
-            vertices.append(centro + r * (circulo[:, 0, None] * v + circulo[:, 1, None] * w))
-        caras = []
-        for k in range(len(anillos) - 1):
-            for i in range(self.n):
-                j = (i + 1) % self.n
-                caras.append([vertices[k][i], vertices[k][j], vertices[k + 1][j], vertices[k + 1][i]])
-        # tapas
-        caras.append([p0 + 0.0 * v] + list(vertices[0][::-1]))
-        caras.append([p1 + 0.0 * v] + list(vertices[-1]))
+
+        radios = r0 + self._anillos * (r1 - r0)
+        centros = p0[None, :] + self._anillos[:, None] * eje[None, :]
+        radial = self._circulo[:, 0, None] * v[None, :] + self._circulo[:, 1, None] * w[None, :]
+        verts = centros[:, None, :] + radios[:, None, None] * radial[None, :, :]
+        all_verts = verts.reshape(-1, 3)
+
+        quads = all_verts[self._quad_indices]
+        v1 = quads[:, 1] - quads[:, 0]
+        v2 = quads[:, 3] - quads[:, 0]
+        normals = np.cross(v1, v2)
+        normas = np.linalg.norm(normals, axis=1, keepdims=True)
+        normals /= np.maximum(normas, 1e-12)
+        intensidades = 0.58 + 0.42 * np.abs(np.dot(normals, self.luz))
+        colores_quads = np.column_stack([
+            np.clip(self.color[None, :] * intensidades[:, None], 0, 1),
+            np.full(len(intensidades), self.alpha),
+        ])
+
+        cap0 = np.vstack([p0, all_verts[:self.n][::-1]])
+        cap1 = np.vstack([p1, all_verts[-self.n:]])
+        caras = list(quads) + [cap0, cap1]
+        colores = np.vstack([colores_quads, self._cap_col])
         self.collection.set_verts(caras)
-        colores = []
-        for cara in caras:
-            arr = np.asarray(cara, dtype=float)
-            normal = np.cross(arr[1] - arr[0], arr[-1] - arr[0])
-            norma = np.linalg.norm(normal)
-            if norma > 1e-12:
-                normal /= norma
-            intensidad = 0.58 + 0.42 * abs(float(np.dot(normal, self.luz)))
-            colores.append(np.clip(self.color * intensidad, 0, 1).tolist() + [1.0])
         self.collection.set_facecolors(colores)
 
 
@@ -97,15 +109,25 @@ class MallaElipsoide:
     def __init__(self, ax, color: str, n_meridianos: int = 12, n_paralelos: int = 7, alpha: float = 1.0, phi_max: float = np.pi):
         self.ax = ax
         self.color = np.array(to_rgb(color))
-        self.alpha = alpha
+        self.alpha = float(alpha)
         self.n_mer = n_meridianos
         self.n_par = n_paralelos
         self.phi_max = phi_max
         theta = np.linspace(0, 2 * np.pi, n_meridianos, endpoint=False)
         phi = np.linspace(0.0, phi_max, n_paralelos + 1)
-        self._unit = []
+        unit = []
         for p in phi:
-            self._unit.append(np.column_stack([np.sin(p) * np.cos(theta), np.sin(p) * np.sin(theta), np.full_like(theta, np.cos(p))]))
+            unit.append(np.column_stack([np.sin(p) * np.cos(theta), np.sin(p) * np.sin(theta), np.full_like(theta, np.cos(p))]))
+        self._unit_stacked = np.concatenate(unit, axis=0)
+
+        quad_indices = []
+        for k in range(n_paralelos):
+            for i in range(n_meridianos):
+                j = (i + 1) % n_meridianos
+                quad_indices.append([k * n_meridianos + i, k * n_meridianos + j, (k + 1) * n_meridianos + j, (k + 1) * n_meridianos + i])
+        self._quad_indices = np.array(quad_indices)
+        self._facecolor = self.color.tolist() + [self.alpha]
+
         self.collection = Poly3DCollection(
             [],
             facecolor=color,
@@ -119,14 +141,10 @@ class MallaElipsoide:
     def actualizar(self, centro, radios):
         centro = np.asarray(centro, dtype=float)
         radios = np.asarray(radios, dtype=float)
-        vertices = [centro + u * radios for u in self._unit]
-        caras = []
-        for k in range(len(vertices) - 1):
-            for i in range(self.n_mer):
-                j = (i + 1) % self.n_mer
-                caras.append([vertices[k][i], vertices[k][j], vertices[k + 1][j], vertices[k + 1][i]])
+        all_verts = self._unit_stacked * radios[None, :] + centro[None, :]
+        caras = all_verts[self._quad_indices]
         self.collection.set_verts(caras)
-        self.collection.set_facecolors(self.color.tolist() + [self.alpha])
+        self.collection.set_facecolors(self._facecolor)
 
 
 class CuerpoHumano:
@@ -166,15 +184,24 @@ class CuerpoHumano:
         a_g = float(estado.get("a_g", 1.0))
         fase = int(estado.get("fase", 0))
         t = float(estado.get("t", 0.0))
+        v = float(estado.get("v", 0.0))
         w = float(np.clip((a_g - 1.0) / 120.0, 0.0, 1.4))
-        osc = 0.0
-        if fase == 1 and t >= self.t_tensado:
-            tau = t - self.t_tensado
-            osc = float(np.sin(2 * np.pi * tau / 0.07) * np.exp(-tau / 0.055))
-        cuello = -0.55 * w + 0.28 * osc
-        hombro = 1.05 * w + 0.22 * osc
-        cadera = -0.32 * w - 0.18 * osc
-        rodilla = 0.55 * w + 0.20 * osc
+
+        if fase == 1:
+            osc = 0.0
+            if t >= self.t_tensado:
+                tau = t - self.t_tensado
+                osc = float(np.sin(2 * np.pi * tau / 0.07) * np.exp(-tau / 0.055))
+            cuello = -0.55 * w + 0.28 * osc
+            hombro = 1.05 * w + 0.22 * osc
+            cadera = -0.32 * w - 0.18 * osc
+            rodilla = 0.55 * w + 0.20 * osc
+        else:
+            v_norm = float(np.clip(v / 25.0, 0.0, 1.0))
+            cuello = 0.03 * v_norm * np.sin(2 * np.pi * t * 3.2)
+            hombro = 0.08 * v_norm * np.sin(2 * np.pi * t * 4.0)
+            cadera = 0.04 * v_norm * np.cos(2 * np.pi * t * 3.0)
+            rodilla = 0.06 * v_norm * np.sin(2 * np.pi * t * 3.5)
 
         origen = np.array([0.0, 0.0, h - 0.34])
         pelvis = origen
@@ -224,9 +251,28 @@ class CuerpoHumano:
         self.partes["torax"].actualizar(j["abdomen"], j["pecho"], 0.16, 0.195)
         self.partes["abdomen"].actualizar(j["pelvis"], j["abdomen"], 0.155, 0.16)
         self.partes["pelvis"].actualizar(j["pelvis"] - np.array([0.0, 0.0, 0.08]), j["pelvis"] + np.array([0.0, 0.0, 0.10]), 0.145, 0.155)
+
+        v_norm = float(np.clip(float(estado.get("v", 0.0)) / 25.0, 0.0, 1.0))
+        fase = int(estado.get("fase", 0))
+        t = float(estado.get("t", 0.0))
+        if fase == 0:
+            dy_coleta = 0.16 + 0.02 * v_norm * np.sin(2 * np.pi * t * 6.0)
+            dz_coleta = -0.28 + 0.10 * v_norm + 0.02 * v_norm * np.cos(2 * np.pi * t * 7.0)
+            dy_abrigo = 0.18 + 0.02 * v_norm * np.sin(2 * np.pi * t * 5.0)
+            dz_abrigo = -0.24 + 0.06 * v_norm + 0.02 * v_norm * np.sin(2 * np.pi * t * 5.5)
+        else:
+            a_g = float(estado.get("a_g", 1.0))
+            w = float(np.clip((a_g - 1.0) / 120.0, 0.0, 1.4))
+            tau = max(0.0, t - self.t_tensado)
+            osc = float(np.sin(2 * np.pi * tau / 0.07) * np.exp(-tau / 0.055))
+            dy_coleta = 0.16 + 0.04 * w - 0.02 * osc
+            dz_coleta = -0.28 - 0.05 * w + 0.03 * osc
+            dy_abrigo = 0.18 + 0.03 * w
+            dz_abrigo = -0.24 - 0.04 * w + 0.02 * osc
+
         self.partes["abrigo_cola"].actualizar(
             j["pelvis"] + np.array([0.0, 0.13, 0.08]),
-            j["pelvis"] + np.array([0.0, 0.18, -0.24]),
+            j["pelvis"] + np.array([0.0, dy_abrigo, dz_abrigo]),
             0.10,
             0.07,
         )
@@ -238,7 +284,7 @@ class CuerpoHumano:
             self.partes[f"pantorrilla_{lado}"].actualizar(j[f"rodilla_{lado}"], j[f"tobillo_{lado}"], 0.070, 0.050)
             self.partes[f"pie_{lado}"].actualizar(j[f"tobillo_{lado}"], j[f"pie_{lado}"], 0.065, 0.045)
         # coleta detrás de la cabeza (y positiva = espalda)
-        self.partes["coleta"].actualizar(j["cabeza"] + np.array([0.0, 0.10, 0.02]), j["cabeza"] + np.array([0.0, 0.16, -0.28]), 0.045, 0.020)
+        self.partes["coleta"].actualizar(j["cabeza"] + np.array([0.0, 0.10, 0.02]), j["cabeza"] + np.array([0.0, dy_coleta, dz_coleta]), 0.045, 0.020)
         # ojos en la cara (el frente es y negativo)
         frente = j["cabeza"] + np.array([0.0, -0.098, 0.015])
         self.ojo_izq.set_data_3d([frente[0] - 0.035], [frente[1]], [frente[2] + 0.018])

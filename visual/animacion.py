@@ -26,13 +26,15 @@ class Estado:
 class Reproductor:
     """Reproduce un ``Resultado`` precalculado; nunca integra en el bucle."""
 
-    def __init__(self, resultado, fps: int = 30):
+    def __init__(self, resultado, fps: int = 60):
         self.resultado = resultado
         self.fps = fps
         self.t_total = float(resultado.t[-1])
         self.t = 0.0
         self.reproduciendo = False
         self._velocidad = 1.0
+        alturas = np.asarray(resultado.altura_torso_m, dtype=float)
+        self._cached_trayectoria = np.column_stack([np.zeros_like(alturas), np.zeros_like(alturas), alturas])
 
     @property
     def velocidad(self) -> float:
@@ -48,10 +50,16 @@ class Reproductor:
 
     @property
     def velocidad_efectiva(self) -> float:
-        # cámara lenta automática en la ventana de frenado
-        if self.t >= self.resultado.t_tensado_s - 0.25:
-            return min(self._velocidad, 0.05)
-        return self._velocidad
+        # cámara lenta cinematográfica suave en la ventana de frenado
+        t_t = self.resultado.t_tensado_s
+        if self.t < t_t - 0.25:
+            return self._velocidad
+        v_min = min(self._velocidad, 0.05)
+        if self.t <= t_t:
+            prog = (self.t - (t_t - 0.25)) / 0.25
+            factor = 0.5 * (1.0 + np.cos(np.pi * prog))
+            return float(v_min + (self._velocidad - v_min) * factor)
+        return v_min
 
     def estado(self, t: float | None = None) -> Estado:
         t = self.t if t is None else float(np.clip(t, 0.0, self.t_total))
@@ -89,6 +97,5 @@ class Reproductor:
 
     def trayectoria_hasta(self, t: float | None = None) -> np.ndarray:
         t = self.t if t is None else float(np.clip(t, 0.0, self.t_total))
-        mascara = self.resultado.t <= t
-        alturas = self.resultado.altura_torso_m[mascara]
-        return np.column_stack([np.zeros_like(alturas), np.zeros_like(alturas), alturas])
+        idx = int(np.searchsorted(self.resultado.t, t, side="right"))
+        return self._cached_trayectoria[:idx]

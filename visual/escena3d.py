@@ -89,6 +89,18 @@ def construir_torre(ax) -> dict:
     }
 
 
+_U_BEZIER = np.linspace(0.0, 1.0, 32)
+_B0 = (1.0 - _U_BEZIER)[:, None] ** 3
+_B1 = 3.0 * (1.0 - _U_BEZIER)[:, None] ** 2 * _U_BEZIER[:, None]
+_B2 = 3.0 * (1.0 - _U_BEZIER)[:, None] * _U_BEZIER[:, None] ** 2
+_B3 = _U_BEZIER[:, None] ** 3
+_SIN_PI_U = np.sin(np.pi * _U_BEZIER)
+_ANG_SOMBRA = np.linspace(0.0, 2 * np.pi, 32)
+_COS_SOMBRA = np.cos(_ANG_SOMBRA)
+_SIN_SOMBRA = 0.52 * np.sin(_ANG_SOMBRA)
+_ZEROS_SOMBRA = np.full_like(_ANG_SOMBRA, 0.008)
+
+
 @dataclass
 class Escena3D:
     fig: object
@@ -109,7 +121,7 @@ class Escena3D:
         modo = modo.lower()
         self.vista = modo
         torre = modo == "torre"
-        for clave in ("paredes", "ventanas", "reloj", "aguja_hora", "aguja_min", "suelo"):
+        for clave in ("paredes", "ventanas", "reloj", "aguja_hora", "aguja_min", "suelo", "rejilla"):
             artista = self.estaticos.get(clave)
             if artista is None:
                 continue
@@ -153,11 +165,12 @@ class Escena3D:
         t = float(estado.get("t", 0.0))
         self.cuerpo.actualizar(estado)
         if self.vista == "seguir":
-            self.aplicar_vista("seguir", h)
+            z0 = max(0.0, h - 0.95)
+            z1 = z0 + (2.2 if h < 2.2 else 1.9)
+            self.ax.set_zlim(z0, z1)
         cintura = self.cuerpo.punto_cintura(estado)
 
         # Seda: curva de Bézier desde el ancla hasta el costado de la cintura.
-        u = np.linspace(0.0, 1.0, 32)
         ancla = np.array([0.0, 0.0, ANCLA_Z])
         if fase == 1:
             control1 = np.array([0.04, 0.03, ANCLA_Z * 0.62])
@@ -166,16 +179,15 @@ class Escena3D:
             control1 = np.array([0.28, 0.10, ANCLA_Z * 0.70])
             control2 = np.array([0.42, 0.18, h + 1.8])
         bezier = (
-            (1 - u)[:, None] ** 3 * ancla
-            + 3 * (1 - u)[:, None] ** 2 * u[:, None] * control1
-            + 3 * (1 - u)[:, None] * u[:, None] ** 2 * control2
-            + u[:, None] ** 3 * cintura
+            _B0 * ancla
+            + _B1 * control1
+            + _B2 * control2
+            + _B3 * cintura
         )
-        vib = 0.0
         if fase == 1 and self.resultado is not None:
             tau = max(0.0, t - self.resultado.t_tensado_s)
-            vib = 0.035 * np.sin(2 * np.pi * tau / 0.035) * np.exp(-tau / 0.08)
-        bezier[:, 0] += vib * np.sin(np.pi * u)
+            vib = 0.040 * np.sin(2 * np.pi * tau / 0.035) * np.exp(-tau / 0.08)
+            bezier[:, 0] += vib * _SIN_PI_U
         self.web.set_data_3d(bezier[:, 0], bezier[:, 1], bezier[:, 2])
         self.web.set_color(PALETA["seda"])
         self.web.set_linewidth(2.6 if fase == 1 else 1.6)
@@ -183,8 +195,7 @@ class Escena3D:
 
         # Sombra elíptica en el suelo.
         r = 0.58 * max(0.12, 1.0 - h / 65.0)
-        ang = np.linspace(0, 2 * np.pi, 32)
-        sombra = np.column_stack([r * np.cos(ang), 0.52 * r * np.sin(ang), np.full_like(ang, 0.008)])
+        sombra = np.column_stack([r * _COS_SOMBRA, r * _SIN_SOMBRA, _ZEROS_SOMBRA])
         self.sombra.set_verts([sombra])
         self.sombra.set_facecolor("#000000")
         self.sombra.set_alpha(0.42)
