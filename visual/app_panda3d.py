@@ -17,6 +17,12 @@ from panda3d.core import (
 from simulador.mediciones import energias, primer_contacto, segmentos
 from simulador.modelo import inspeccionar_paso, simular
 from simulador.parametros import Computo, Escena
+from simulador.variables import (
+    ESCENARIOS_PISO,
+    INDICE_PASO_BASE_VISOR,
+    METODO_DEFAULT,
+    PASOS_VISOR_MS,
+)
 from .animacion import avanzar_reloj
 from .panel_panda3d import (
     ACTIVO, ALTO, AMBAR, ANCHO, BLANCO, CIAN, ESCENA, MUTED, SUPERFICIE,
@@ -24,8 +30,8 @@ from .panel_panda3d import (
 )
 from .personaje_panda3d import PersonajeFemenino
 
-PASOS_MS = (0.25, 0.5, 1, 2, 4, 8)
-PISOS = ((0.0, 0.0), (1.00, -0.50), (0.85, 0.0))
+PASOS_MS = PASOS_VISOR_MS
+PISOS = ESCENARIOS_PISO
 DURACION_DANO_S = 0.60
 
 
@@ -75,8 +81,8 @@ class Visor(ShowBase):
         self.escena = Escena.pelicula()
         self.referencia = simular(self.escena)
         self.vista = "seguir"
-        self.indice_h = 2
-        self.metodo = "rk4"
+        self.indice_h = INDICE_PASO_BASE_VISOR
+        self.metodo = METODO_DEFAULT
         self.indice_piso = 0
         self.piso_m = 0.0
         self.t = 0.0

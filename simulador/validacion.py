@@ -13,6 +13,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .analitica import caida_sin_aire, elongacion_desde_k, k_para_aceleracion
+from .variables import (
+    AREA_SEDA_M2,
+    CAIDA_M,
+    G,
+    LONGITUD_SEDA_M,
+    MASA_KG,
+    OBJETIVO_SUPERVIVENCIA_G,
+)
 
 
 @dataclass(frozen=True)
@@ -29,12 +37,12 @@ class ResultadoLeicester:
 
 
 def escenario_leicester(
-    altura_m: float = 42.0,
-    masa_kg: float = 50.0,
-    objetivo_g: float = 6.0,
-    area_m2: float = 2.5e-5,
-    longitud_m: float = 42.0,
-    gravedad_m_s2: float = 9.81,
+    altura_m: float = CAIDA_M,
+    masa_kg: float = MASA_KG,
+    objetivo_g: float = OBJETIVO_SUPERVIVENCIA_G,
+    area_m2: float = AREA_SEDA_M2,
+    longitud_m: float = LONGITUD_SEDA_M,
+    gravedad_m_s2: float = G,
 ) -> ResultadoLeicester:
     """Reproduce el caso de Leicester con formas cerradas."""
     _, v0 = caida_sin_aire(altura_m, gravedad_m_s2)

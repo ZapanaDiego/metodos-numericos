@@ -11,7 +11,21 @@ from dataclasses import dataclass
 
 import numpy as np
 
-G = 9.81
+from .variables import (
+    CAIDA_M,
+    CAIDA_SD_MC_M,
+    CD_AREA_MAX_MC_M2,
+    CD_AREA_MIN_MC_M2,
+    DENSIDAD_AIRE_KG_M3,
+    G,
+    K_MEDIA_MC_N_M,
+    K_SIGMA_LOG_MC,
+    MASA_CABEZA_KG,
+    MASA_KG,
+    MASA_SD_MC_KG,
+    R_CUELLO_M,
+    SEMILLA_DEFAULT,
+)
 
 
 def ou_proceso(
@@ -41,14 +55,14 @@ def cd_area(theta, minimo: float = 0.10, maximo: float = 0.70):
 def muestrear_parametros(
     n: int,
     rng: np.random.Generator,
-    masa_media: float = 50.0,
-    masa_sd: float = 3.0,
-    caida_media: float = 42.0,
-    caida_sd: float = 0.5,
-    k_media: float = 195739.0,
-    k_sigma_log: float = 0.08,
-    cd_area_min: float = 0.40,
-    cd_area_max: float = 0.80,
+    masa_media: float = MASA_KG,
+    masa_sd: float = MASA_SD_MC_KG,
+    caida_media: float = CAIDA_M,
+    caida_sd: float = CAIDA_SD_MC_M,
+    k_media: float = K_MEDIA_MC_N_M,
+    k_sigma_log: float = K_SIGMA_LOG_MC,
+    cd_area_min: float = CD_AREA_MIN_MC_M2,
+    cd_area_max: float = CD_AREA_MAX_MC_M2,
 ) -> dict[str, np.ndarray]:
     masa = np.clip(rng.normal(masa_media, masa_sd, n), 40.0, 65.0)
     caida = np.clip(rng.normal(caida_media, caida_sd, n), 40.0, 45.0)
@@ -57,7 +71,7 @@ def muestrear_parametros(
     return {"masa_kg": masa, "caida_m": caida, "k_n_m": k, "cd_area_m2": cd}
 
 
-def _v0_vectorizado(altura, masa, cd, rho=1.20, g=G):
+def _v0_vectorizado(altura, masa, cd, rho=DENSIDAD_AIRE_KG_M3, g=G):
     vt = np.sqrt(2.0 * masa * g / (rho * cd))
     t = (vt / g) * np.arccosh(np.exp(g * altura / (vt * vt)))
     return vt * np.tanh(g * t / vt)
@@ -104,7 +118,7 @@ class Ensemble:
 
 def simular_ensemble(
     n: int = 2000,
-    semilla: int = 42,
+    semilla: int = SEMILLA_DEFAULT,
     escena_base=None,
 ) -> Ensemble:
     """Monte Carlo vectorizado del escenario base."""
@@ -129,7 +143,7 @@ def simular_ensemble(
     energia = 0.5 * masa * v0**2 + masa * g * x
     # HIC equivalente con pulso constante de duración t_pico
     hic = tp * a_g**2.5
-    m_cuello = 5.0 * 0.18 * (a + g)
+    m_cuello = MASA_CABEZA_KG * R_CUELLO_M * (a + g)
     return Ensemble(
         masa_kg=masa,
         caida_m=caida,

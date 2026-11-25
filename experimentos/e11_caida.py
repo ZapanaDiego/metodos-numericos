@@ -8,14 +8,15 @@ from simulador.graficas import COLORES, RESULTADOS, configurar, guardar
 from simulador.mediciones import energias
 from simulador.modelo import simular
 from simulador.parametros import Computo, Escena
+from simulador.variables import METODO_DEFAULT, PASO_BASE_S, PASOS_CONVERGENCIA_S
 
 MAGNITUDES = ("t_tensado_s", "v0_m_s", "t_pico_s", "x_max_m", "f_max_n", "p_max_w", "energia_j")
-PASOS = (0.008, 0.004, 0.002, 0.001, 0.0005)
+PASOS = PASOS_CONVERGENCIA_S
 
 
 def perfiles():
     """Exporta la corrida del visor y destaca el primer cero de velocidad."""
-    r = simular(Escena.pelicula(), computo=Computo(0.001, "rk4"))
+    r = simular(Escena.pelicula(), computo=Computo(PASO_BASE_S, METODO_DEFAULT))
     tau = 1000 * (r.t - r.t_tensado_s)
     x = r.elongacion_m
     tension = r.k_n_m * x

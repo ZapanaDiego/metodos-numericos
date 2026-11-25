@@ -19,6 +19,13 @@ from panda3d.core import (
     Vec3,
 )
 
+from simulador.variables import (
+    BRAZO_CONTACTO_CABEZA_M,
+    BRAZO_CONTACTO_PIERNAS_M,
+    PIVOTE_CADERA_M,
+    PIVOTE_CUELLO_M,
+    UMBRAL_CUELLO_LIMITE_NM,
+)
 from .mallas_panda3d import (
     adjuntar_geom,
     malla_elipsoide,
@@ -233,7 +240,7 @@ class PersonajeFemenino:
     def _construir_cabeza(self) -> None:
         # Pivote cervical exactamente en x = +0.39 m (simulador/mediciones.py)
         self.cabeza = self.raiz.attachNewNode("cuello")
-        self.cabeza.setX(0.39)
+        self.cabeza.setX(PIVOTE_CUELLO_M)
         self.craneo = self.cabeza.attachNewNode("craneo")
 
         # Cuello estilizado conectado suavemente desde el tronco hasta la mandíbula
@@ -461,7 +468,7 @@ class PersonajeFemenino:
     def _construir_piernas(self) -> None:
         # Pivote de caderas exactamente en x = -0.27 m (simulador/mediciones.py)
         self.piernas = self.raiz.attachNewNode("caderas")
-        self.piernas.setX(-0.27)
+        self.piernas.setX(-PIVOTE_CADERA_M)
 
         self.muslos: list[NodePath] = []
         self.rodillas: list[NodePath] = []
@@ -985,7 +992,7 @@ class PersonajeFemenino:
         pulso = 0.5 + 0.5 * sin(2.0 * pi * 3.8 * t_dano) if en_fin else 1.0
 
         # Daño cervical (cuello): activo al superar el umbral de tolerancia (90 Nm)
-        intensidad_cuello = float(np.clip((m_cuello_nm - 90.0) / 1100.0, 0.0, 1.0)) if frenado else 0.0
+        intensidad_cuello = float(np.clip((m_cuello_nm - UMBRAL_CUELLO_LIMITE_NM) / 1100.0, 0.0, 1.0)) if frenado else 0.0
         if intensidad_cuello > 0.05:
             self.dano_cuello.show()
             escala_c = 0.92 + 0.24 * intensidad_cuello + (0.10 * pulso if en_fin else 0.0)
@@ -1034,10 +1041,10 @@ class PersonajeFemenino:
             self.dano_piso.show()
             es_piernas = contacto.segmento == "Piernas"
             if es_piernas:
-                x_imp = -0.27 - 0.79 * cos(angulo_piernas_rad)
+                x_imp = -PIVOTE_CADERA_M - BRAZO_CONTACTO_PIERNAS_M * cos(angulo_piernas_rad)
                 escala_energia = 1.25  # 4841 J
             else:
-                x_imp = 0.39 + 0.18 * cos(angulo_cabeza_rad)
+                x_imp = PIVOTE_CUELLO_M + BRAZO_CONTACTO_CABEZA_M * cos(angulo_cabeza_rad)
                 escala_energia = 0.74  # 934 J
             self.dano_piso.setPos(x_imp, 0.0, 0.0)
 

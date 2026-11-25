@@ -4,10 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-# Rangos citados en la literatura para seda de araña (dragline):
-# módulo ~1-10 GPa, deformación de rotura ~20-35 %.
-RANGO_SEDA_PA = (1e9, 10e9)
-RANGO_PERMISIVO_PA = (100e6, 10e9)
+from .variables import DEFORMACION_ROTURA, RANGO_PERMISIVO_PA, RANGO_SEDA_PA
 
 
 def k_a_E(k_n_m: float, longitud_m: float, area_m2: float) -> float:
@@ -56,7 +53,7 @@ class Viabilidad:
 
     @property
     def deformacion_ok(self) -> bool:
-        return self.deformacion <= 0.30
+        return self.deformacion <= DEFORMACION_ROTURA
 
     @property
     def espacio_ok(self) -> bool:

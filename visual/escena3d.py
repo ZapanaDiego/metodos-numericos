@@ -7,12 +7,13 @@ from dataclasses import dataclass, field
 import numpy as np
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
+from simulador.variables import ALTURA_TORRE_M, H_ANCLA_M, LADO_TORRE_M
 from .cuerpo3d import CuerpoHumano
 from .estilo import CUERPO, PALETA, aplicar_estilo_3d
 
-ANCLA_Z = 43.60
-ALTURA_TORRE = 72.0
-LADO_TORRE = 18.0
+ANCLA_Z = H_ANCLA_M
+ALTURA_TORRE = ALTURA_TORRE_M
+LADO_TORRE = LADO_TORRE_M
 
 
 def _cara(ax, puntos, color, alpha=0.5, borde=None, lw=0.5):

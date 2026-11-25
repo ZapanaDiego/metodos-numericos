@@ -5,6 +5,22 @@ import numpy as np
 from scipy.integrate import cumulative_trapezoid
 
 from .edo import integrar
+from .variables import (
+    AMORTIGUAMIENTO_CADERA_NM_S_RAD,
+    AMORTIGUAMIENTO_CUELLO_NM_S_RAD,
+    BRAZO_CONTACTO_CABEZA_M,
+    BRAZO_CONTACTO_PIERNAS_M,
+    INERCIA_CABEZA_KG_M2,
+    INERCIA_PIERNAS_KG_M2,
+    PIVOTE_CADERA_M,
+    PIVOTE_CUELLO_M,
+    RADIO_CABEZA_M,
+    RADIO_PIERNAS_M,
+    REPOSO_CABEZA_RAD,
+    REPOSO_PIERNAS_RAD,
+    RIGIDEZ_CADERA_NM_RAD,
+    RIGIDEZ_CUELLO_NM_RAD,
+)
 
 
 @dataclass(frozen=True)
@@ -58,7 +74,7 @@ class PerfilSegmento:
     contacto: Contacto | None
 
 
-def segmentos(resultado, piso_m=0.0, *, piernas_rad=0.0):
+def segmentos(resultado, piso_m=0.0, *, piernas_rad=REPOSO_PIERNAS_RAD):
     """Dos osciladores en el plano sagital forzados por el torso prescrito.
 
     La posición dorsal es horizontal durante el frenado. El modelo termina
@@ -68,10 +84,12 @@ def segmentos(resultado, piso_m=0.0, *, piernas_rad=0.0):
     cuerpo = r.escena.cuerpo
     g = r.escena.gravedad_m_s2
     segmentos = (
-        Segmento("Cabeza", cuerpo.masa_cabeza_kg, 0.39, cuerpo.r_cuello_m,
-                 0.18, 0.10, 0.22, 45, 1.2, 0.0),
-        Segmento("Piernas", cuerpo.masa_piernas_kg, 0.27, cuerpo.r_cadera_m,
-                 0.79, 0.08, 5.0, 120, 5.0, piernas_rad),
+        Segmento("Cabeza", cuerpo.masa_cabeza_kg, PIVOTE_CUELLO_M, cuerpo.r_cuello_m,
+                 BRAZO_CONTACTO_CABEZA_M, RADIO_CABEZA_M, INERCIA_CABEZA_KG_M2,
+                 RIGIDEZ_CUELLO_NM_RAD, AMORTIGUAMIENTO_CUELLO_NM_S_RAD, REPOSO_CABEZA_RAD),
+        Segmento("Piernas", cuerpo.masa_piernas_kg, PIVOTE_CADERA_M, cuerpo.r_cadera_m,
+                 BRAZO_CONTACTO_PIERNAS_M, RADIO_PIERNAS_M, INERCIA_PIERNAS_KG_M2,
+                 RIGIDEZ_CADERA_NM_RAD, AMORTIGUAMIENTO_CADERA_NM_S_RAD, piernas_rad),
     )
     t0 = r.t_tensado_s
     duracion = r.t[-1] - t0

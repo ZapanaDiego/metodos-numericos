@@ -10,6 +10,8 @@ from collections.abc import Callable
 
 import numpy as np
 
+from .variables import DENSIDAD_AIRE_KG_M3, G, OBJETIVO_SUPERVIVENCIA_G
+
 
 def _error_abs(fx: float) -> float:
     return abs(fx)
@@ -149,8 +151,8 @@ def t_tensado_numerico(
     altura_m: float,
     masa_kg: float,
     cd_area_m2: float,
-    densidad_aire_kg_m3: float = 1.20,
-    gravedad_m_s2: float = 9.81,
+    densidad_aire_kg_m3: float = DENSIDAD_AIRE_KG_M3,
+    gravedad_m_s2: float = G,
     tol: float = 1e-12,
 ) -> tuple[float, int, list[tuple[int, float, float]]]:
     """Raíz de ``y(t) - H`` para la caída con arrastre."""
@@ -170,8 +172,8 @@ def t_tensado_numerico(
 def k_critico_supervivencia(
     v0_m_s: float,
     masa_kg: float,
-    objetivo_g: float = 6.0,
-    gravedad_m_s2: float = 9.81,
+    objetivo_g: float = OBJETIVO_SUPERVIVENCIA_G,
+    gravedad_m_s2: float = G,
     tol: float = 1e-9,
 ) -> tuple[float, int, list[tuple[int, float, float]]]:
     """Raíz de ``a_max(k) - objetivo_g·g``."""
@@ -191,7 +193,7 @@ def t_impacto_suelo(
     k_n_m: float,
     masa_kg: float,
     espacio_libre_m: float,
-    gravedad_m_s2: float = 9.81,
+    gravedad_m_s2: float = G,
     tol: float = 1e-12,
 ) -> tuple[float, int, list[tuple[int, float, float]]]:
     """Primer instante en que ``x(t) = espacio_libre`` (contacto con el suelo)."""

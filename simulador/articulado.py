@@ -15,7 +15,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .parametros import Cuerpo, G
+from .parametros import Cuerpo
+from .variables import G, UMBRAL_CUELLO_LIMITE_NM, UMBRAL_CUELLO_SEGURO_NM
 
 
 @dataclass(frozen=True)
@@ -81,8 +82,8 @@ def perfil_momentos(resultado, cuerpo: Cuerpo, gravedad_m_s2: float = G):
 
 def clasificar_momento(m_cuello_n_m: float) -> str:
     """Umbral orientativo de tolerancia cervical: 30-90 N·m."""
-    if m_cuello_n_m <= 30.0:
+    if m_cuello_n_m <= UMBRAL_CUELLO_SEGURO_NM:
         return "seguro"
-    if m_cuello_n_m <= 90.0:
+    if m_cuello_n_m <= UMBRAL_CUELLO_LIMITE_NM:
         return "limite"
     return "letal"

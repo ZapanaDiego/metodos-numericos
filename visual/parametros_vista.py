@@ -11,16 +11,27 @@ import numpy as np
 
 from simulador.modelo import Resultado, simular
 from simulador.parametros import Computo, Cuerpo, Escena, Telarana
+from simulador.variables import (
+    ALTURA_TORSO_FINAL_M,
+    CD_AREA_M2,
+    ESPACIO_LIBRE_M,
+    ESTIRAMIENTO_CAL_M,
+    G,
+    K_MEDIA_MC_N_M,
+    LONGITUD_SEDA_M,
+    MASA_KG,
+    SEMILLA_DEFAULT,
+)
 
 
 @dataclass
 class ParametrosVista:
-    masa_kg: float = 50.0
-    cd_area_m2: float = 0.60
-    estiramiento_m: float = 0.40
-    k_n_m: float = 195739.0
-    longitud_m: float = 42.0
-    semilla: int = 42
+    masa_kg: float = MASA_KG
+    cd_area_m2: float = CD_AREA_M2
+    estiramiento_m: float = ESTIRAMIENTO_CAL_M
+    k_n_m: float = K_MEDIA_MC_N_M
+    longitud_m: float = LONGITUD_SEDA_M
+    semilla: int = SEMILLA_DEFAULT
     aire: bool = True
     tumbling: bool = False
     modo: str = "calibracion"
@@ -53,12 +64,12 @@ class ParametrosVista:
         setattr(self, clave, valor)
 
     def restablecer(self) -> None:
-        self.masa_kg = 50.0
-        self.cd_area_m2 = 0.60
-        self.estiramiento_m = 0.40
-        self.k_n_m = 195739.0
-        self.longitud_m = 42.0
-        self.semilla = 42
+        self.masa_kg = MASA_KG
+        self.cd_area_m2 = CD_AREA_M2
+        self.estiramiento_m = ESTIRAMIENTO_CAL_M
+        self.k_n_m = K_MEDIA_MC_N_M
+        self.longitud_m = LONGITUD_SEDA_M
+        self.semilla = SEMILLA_DEFAULT
         self.aire = True
         self.tumbling = False
         self.modo = "calibracion"
@@ -73,13 +84,13 @@ class ParametrosVista:
 
     def escena(self) -> Escena:
         L = float(self.longitud_m)
-        h_ancla = L + 1.60
+        h_ancla = L + ESPACIO_LIBRE_M
         if self.modo == "calibracion":
             x = float(self.estiramiento_m)
             h_torso = h_ancla - L - x
             tel = Telarana(longitud_m=L, estiramiento_m=x, k_n_m=None)
         else:
-            h_torso = 1.20
+            h_torso = ALTURA_TORSO_FINAL_M
             tel = Telarana(longitud_m=L, estiramiento_m=None, k_n_m=float(self.k_n_m))
         cuerpo = Cuerpo(masa_kg=float(self.masa_kg), cd_area_m2=self.cd_area_efectiva())
         return Escena(
@@ -89,7 +100,7 @@ class ParametrosVista:
             cuerpo=cuerpo,
             telarana=tel,
             modo=self.modo,
-            gravedad_m_s2=9.81,
+            gravedad_m_s2=G,
         )
 
     def simular(self) -> Resultado:

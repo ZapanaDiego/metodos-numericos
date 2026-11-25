@@ -30,8 +30,7 @@ from .analitica import (
 )
 from .edo import etapas_rk4, integrar
 from .parametros import Computo, Escena
-
-G = 9.81
+from .variables import G, OBJETIVO_SUPERVIVENCIA_G
 
 
 @dataclass
@@ -80,7 +79,7 @@ class Resultado:
 
     @property
     def semaforo(self) -> str:
-        return "supervivencia" if self.a_max_g <= 6.0 else "letal"
+        return "supervivencia" if self.a_max_g <= OBJETIVO_SUPERVIVENCIA_G else "letal"
 
     def momentos(self):
         """Momentos cervical y de cadera en el pico de aceleración."""

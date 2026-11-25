@@ -13,6 +13,7 @@ from matplotlib.ticker import EngFormatter
 from simulador.mediciones import energias, primer_contacto, segmentos
 from simulador.modelo import simular
 from simulador.parametros import Computo, Escena
+from simulador.variables import METODO_DEFAULT, PASO_BASE_S
 
 
 def series_corrida(r, fin):
@@ -201,8 +202,8 @@ class Laboratorio:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--metodo", choices=("euler", "rk4"), default="rk4")
-    parser.add_argument("--paso", type=float, default=0.001)
+    parser.add_argument("--metodo", choices=("euler", "rk4"), default=METODO_DEFAULT)
+    parser.add_argument("--paso", type=float, default=PASO_BASE_S)
     parser.add_argument("--piso", type=float, default=0)
     parser.add_argument("--postura", type=float, default=0)
     parser.add_argument("--instante", type=float, default=0)

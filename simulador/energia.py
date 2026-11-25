@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-G = 9.81
+from .variables import G, OBJETIVO_SUPERVIVENCIA_G, UMBRAL_HIC, VENTANA_HIC_S
 
 
 def energia_cinetica(masa_kg: float, v_m_s):
@@ -38,7 +38,7 @@ def potencia_pico(k_n_m: float, x, v) -> float:
     return float(np.max(np.abs(k_n_m * np.asarray(x) * np.asarray(v))))
 
 
-def hic_pulso_rectangular(a_g: float, duracion_s: float, ventana_s: float = 0.036) -> float:
+def hic_pulso_rectangular(a_g: float, duracion_s: float, ventana_s: float = VENTANA_HIC_S) -> float:
     """HIC analítico de un pulso rectangular constante."""
     dt = min(duracion_s, ventana_s)
     return float(dt * a_g**2.5)
@@ -47,7 +47,7 @@ def hic_pulso_rectangular(a_g: float, duracion_s: float, ventana_s: float = 0.03
 def hic(
     a_g,
     dt_s: float,
-    ventana_s: float = 0.036,
+    ventana_s: float = VENTANA_HIC_S,
 ) -> float:
     """Head Injury Criterion con ventana máxima de 36 ms.
 
@@ -75,9 +75,9 @@ def hic(
 
 def clasificar(a_max_g: float, hic_valor: float | None = None) -> str:
     """Semáforo simple: 6 g y HIC 700 como umbrales."""
-    if a_max_g > 6.0:
+    if a_max_g > OBJETIVO_SUPERVIVENCIA_G:
         return "letal"
-    if hic_valor is not None and hic_valor > 700.0:
+    if hic_valor is not None and hic_valor > UMBRAL_HIC:
         return "letal"
     return "supervivencia"
 

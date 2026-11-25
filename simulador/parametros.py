@@ -14,20 +14,42 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 
-G = 9.81
+from .variables import (
+    ALTURA_TORSO_FINAL_M,
+    AREA_SEDA_M2,
+    CAIDA_M,
+    CAIDA_TORRE_M,
+    CD_AREA_M2,
+    DEFORMACION_ROTURA,
+    DENSIDAD_AIRE_KG_M3,
+    ESTIRAMIENTO_CAL_M,
+    G,
+    H_ANCLA_M,
+    LONGITUD_SEDA_M,
+    MASA_CABEZA_KG,
+    MASA_KG,
+    MASA_PIERNAS_KG,
+    METODO_DEFAULT,
+    OBJETIVO_SUPERVIVENCIA_G,
+    PASO_BASE_S,
+    PASO_COMPUTO_DEFAULT_S,
+    R_CADERA_M,
+    R_CUELLO_M,
+    SEMILLA_DEFAULT,
+)
 
 
 @dataclass(frozen=True)
 class Cuerpo:
     """Cuerpo rígido aproximado y sus segmentos para el latigazo."""
 
-    masa_kg: float = 50.0
-    cd_area_m2: float = 0.6
-    densidad_aire_kg_m3: float = 1.20
-    masa_cabeza_kg: float = 5.0
-    masa_piernas_kg: float = 20.0
-    r_cuello_m: float = 0.18
-    r_cadera_m: float = 0.45
+    masa_kg: float = MASA_KG
+    cd_area_m2: float = CD_AREA_M2
+    densidad_aire_kg_m3: float = DENSIDAD_AIRE_KG_M3
+    masa_cabeza_kg: float = MASA_CABEZA_KG
+    masa_piernas_kg: float = MASA_PIERNAS_KG
+    r_cuello_m: float = R_CUELLO_M
+    r_cadera_m: float = R_CADERA_M
 
     def __post_init__(self) -> None:
         if self.masa_kg <= 0:
@@ -47,12 +69,12 @@ class Telarana:
     estiramiento.
     """
 
-    longitud_m: float = 42.0
-    area_m2: float = 2.5e-5
-    estiramiento_m: float | None = 0.40
+    longitud_m: float = LONGITUD_SEDA_M
+    area_m2: float = AREA_SEDA_M2
+    estiramiento_m: float | None = ESTIRAMIENTO_CAL_M
     k_n_m: float | None = None
     modulo_pa: float | None = None
-    deformacion_rotura: float = 0.30
+    deformacion_rotura: float = DEFORMACION_ROTURA
 
     def __post_init__(self) -> None:
         if self.longitud_m <= 0:
@@ -80,9 +102,9 @@ class Telarana:
 class Escena:
     """Geometría, cuerpo y telaraña de una simulación."""
 
-    h_ancla_m: float = 43.60
-    caida_m: float = 42.00
-    altura_torso_m: float = 1.20
+    h_ancla_m: float = H_ANCLA_M
+    caida_m: float = CAIDA_M
+    altura_torso_m: float = ALTURA_TORSO_FINAL_M
     cuerpo: Cuerpo = field(default_factory=Cuerpo)
     telarana: Telarana = field(default_factory=Telarana)
     modo: str = "calibracion"
@@ -116,10 +138,10 @@ class Escena:
     @classmethod
     def torre_completa(cls) -> "Escena":
         """Caso paramétrico: caída desde la cúspide (70.4 m)."""
-        return cls(caida_m=70.40)
+        return cls(caida_m=CAIDA_TORRE_M)
 
     @classmethod
-    def supervivencia(cls, objetivo_g: float = 6.0) -> "Escena":
+    def supervivencia(cls, objetivo_g: float = OBJETIVO_SUPERVIVENCIA_G) -> "Escena":
         """Escenario hipotético de 6 g con la misma caída y arrastre.
 
         La rigidez se obtiene de ``a_max(k) = objetivo_g·g`` y luego el
@@ -168,12 +190,18 @@ class Escena:
 class Computo:
     """Parámetros de la integración numérica."""
 
-    dt_s: float = 1e-4
-    metodo: str = "rk4"
-    semilla: int = 42
+    dt_s: float = PASO_COMPUTO_DEFAULT_S
+    metodo: str = METODO_DEFAULT
+    semilla: int = SEMILLA_DEFAULT
 
     def __post_init__(self) -> None:
         if self.dt_s <= 0:
             raise ValueError("dt debe ser positivo.")
         if not 0 <= self.semilla < 2**32:
             raise ValueError("La semilla debe estar en [0, 2**32).")
+
+
+CUERPO_BASE = Cuerpo()
+TELARANA_BASE = Telarana()
+ESCENA_BASE = Escena.pelicula()
+COMPUTO_VISOR_BASE = Computo(dt_s=PASO_BASE_S, metodo=METODO_DEFAULT)

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import numpy as np
 
-G = 9.81
+from .variables import DENSIDAD_AIRE_KG_M3, G
 
 
 # --------------------------------------------------------------------- caída
@@ -27,7 +27,7 @@ def caida_sin_aire(altura_m: float, gravedad_m_s2: float = G) -> tuple[float, fl
 def velocidad_terminal(
     masa_kg: float,
     cd_area_m2: float,
-    densidad_aire_kg_m3: float = 1.20,
+    densidad_aire_kg_m3: float = DENSIDAD_AIRE_KG_M3,
     gravedad_m_s2: float = G,
 ) -> float:
     """Velocidad terminal del arrastre cuadrático."""
@@ -40,7 +40,7 @@ def caida_con_arrastre(
     altura_m: float,
     masa_kg: float,
     cd_area_m2: float,
-    densidad_aire_kg_m3: float = 1.20,
+    densidad_aire_kg_m3: float = DENSIDAD_AIRE_KG_M3,
     gravedad_m_s2: float = G,
 ) -> tuple[float, float, float]:
     """Tiempo, velocidad final y velocidad terminal con arrastre cuadrático.
