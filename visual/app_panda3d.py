@@ -10,7 +10,7 @@ from time import perf_counter
 import numpy as np
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import (
-    AmbientLight, DirectionalLight, Filename, LineSegs, Point3, Quat,
+    AmbientLight, DirectionalLight, Filename, LineSegs, Point3,
     Vec3, loadPrcFileData,
 )
 
@@ -22,9 +22,11 @@ from .panel_panda3d import (
     ACTIVO, ALTO, AMBAR, ANCHO, BLANCO, CIAN, ESCENA, MUTED, SUPERFICIE,
     TARJETA, Grafica, boton, rectangulo, texto,
 )
+from .personaje_panda3d import PersonajeFemenino
 
 PASOS_MS = (0.25, 0.5, 1, 2, 4, 8)
 PISOS = ((0.0, 0.0), (1.00, -0.50), (0.85, 0.0))
+DURACION_DANO_S = 0.60
 
 
 def linea(padre, puntos, color, grosor=2):
@@ -37,12 +39,6 @@ def linea(padre, puntos, color, grosor=2):
     return padre.attachNewNode(trazo.create(dynamic=True))
 
 
-def inclinacion(nodo, grados):
-    q = Quat()
-    q.setFromAxisAngle(grados, Vec3(0, 1, 0))
-    nodo.setQuat(q)
-
-
 class Visor(ShowBase):
     """La tarea gráfica lee estados precalculados e interpola por tiempo físico."""
 
@@ -51,17 +47,27 @@ class Visor(ShowBase):
         if self.win is None:
             raise RuntimeError("Panda3D no pudo abrir una superficie gráfica.")
         self.disableMouse()
-        self.setBackgroundColor(0.025, 0.04, 0.06)
+        self.setBackgroundColor(0.025, 0.04, 0.06, 1.0)
         self.camLens.setNearFar(0.05, 160)
         self.region_3d = self.cam.node().getDisplayRegion(0)
         ambiente = AmbientLight("ambiente")
-        ambiente.setColor((0.53, 0.59, 0.69, 1))
+        ambiente.setColor((0.30, 0.34, 0.42, 1))
         self.render.setLight(self.render.attachNewNode(ambiente))
-        luz = DirectionalLight("luz lateral")
-        luz.setColor((0.88, 0.80, 0.73, 1))
-        foco = self.render.attachNewNode(luz)
-        foco.setHpr(25, -48, 0)
+        luz_clave = DirectionalLight("luz clave")
+        luz_clave.setColor((0.76, 0.71, 0.66, 1))
+        foco = self.render.attachNewNode(luz_clave)
+        foco.setHpr(32, -46, 0)
         self.render.setLight(foco)
+        luz_relleno = DirectionalLight("luz relleno")
+        luz_relleno.setColor((0.28, 0.35, 0.45, 1))
+        relleno = self.render.attachNewNode(luz_relleno)
+        relleno.setHpr(-55, -22, 0)
+        self.render.setLight(relleno)
+        luz_borde = DirectionalLight("luz recorte")
+        luz_borde.setColor((0.26, 0.46, 0.58, 1))
+        borde = self.render.attachNewNode(luz_borde)
+        borde.setHpr(160, 26, 0)
+        self.render.setLight(borde)
         self.esfera = self.loader.loadModel("models/misc/sphere")
         self.caja = self.loader.loadModel("models/box")
         self.esfera.setTextureOff(1)
@@ -74,6 +80,7 @@ class Visor(ShowBase):
         self.indice_piso = 0
         self.piso_m = 0.0
         self.t = 0.0
+        self.t_dano = 0.0
         self.play = False
         self.zoom_grafica = False
         self.ver_edo = False
@@ -97,9 +104,11 @@ class Visor(ShowBase):
 
     def _crear_torre(self):
         self.piso = self.render.attachNewNode("piso")
+        self.tablas_piso = []
         for i in range(8):
-            self._volumen(self.caja, self.piso, (-4, i - 4, -0.17), (8, 0.96, 0.16),
-                          (0.20 + i % 2 * 0.035, 0.17, 0.15, 1))
+            tabla = self._volumen(self.caja, self.piso, (-4, i - 4, -0.17), (8, 0.96, 0.16),
+                                  (0.20 + i % 2 * 0.035, 0.17, 0.15, 1))
+            self.tablas_piso.append(tabla)
         acero = (0.19, 0.24, 0.29, 1)
         for x, y in ((-4, 3), (4, 3), (-4, -5), (4, -5)):
             self._volumen(self.caja, self.render, (x, y, 0), (0.24, 0.24, 44), acero)
@@ -115,41 +124,13 @@ class Visor(ShowBase):
 
     def _crear_cuerpo(self):
         # Eje X hacia la cabeza y Z hacia el frente del personaje.
-        self.cuerpo = self.render.attachNewNode("agarre abdominal")
+        self.personaje = PersonajeFemenino(self.render, self.piso)
+        self.cuerpo = self.personaje.raiz
+        self.cabeza = self.personaje.cabeza
+        self.piernas = self.personaje.piernas
+        self.brazos = self.personaje.brazos
         self.fantasma = self._volumen(self.esfera, self.render, (0, 0, 0),
-                                      (0.10, 0.10, 0.10), AMBAR)
-        abrigo = (0.17, 0.54, 0.57, 1)
-        piel = (0.79, 0.55, 0.39, 1)
-        oscuro = (0.13, 0.12, 0.23, 1)
-        cabello = (0.47, 0.28, 0.14, 1)
-
-        def pieza(padre, centro, escala, color):
-            return self._volumen(self.esfera, padre, centro, escala, color)
-
-        pieza(self.cuerpo, (0.10, 0, -0.09), (0.32, 0.22, 0.13), abrigo)
-        pieza(self.cuerpo, (-0.19, 0, -0.09), (0.20, 0.19, 0.12), oscuro)
-        self.cabeza = self.cuerpo.attachNewNode("cuello")
-        self.cabeza.setX(0.39)
-        pieza(self.cabeza, (0.035, 0, -0.015), (0.07, 0.06, 0.066), piel)
-        pieza(self.cabeza, (0.18, 0, 0), (0.10, 0.085, 0.095), piel)
-        pieza(self.cabeza, (0.19, 0, -0.043), (0.13, 0.106, 0.075), cabello)
-        self.piernas = self.cuerpo.attachNewNode("caderas")
-        self.piernas.setX(-0.27)
-        self.brazos = []
-        for signo in (-1, 1):
-            brazo = self.cuerpo.attachNewNode("hombro")
-            brazo.setPos(0.25, signo * 0.18, -0.08)
-            pieza(brazo, (-0.06, signo * 0.13, 0), (0.09, 0.16, 0.065), abrigo)
-            pieza(brazo, (0.003, signo * 0.31, 0.035), (0.08, 0.13, 0.047), abrigo)
-            pieza(brazo, (0.05, signo * 0.43, 0.04), (0.06, 0.045, 0.026), piel)
-            self.brazos.append(brazo)
-            lateral = signo * 0.105
-            pieza(self.piernas, (-0.21, lateral, -0.01), (0.25, 0.10, 0.088), oscuro)
-            pieza(self.piernas, (-0.58, lateral, -0.035), (0.23, 0.068, 0.065), oscuro)
-            pieza(self.piernas, (-0.79, lateral, 0.00), (0.075, 0.067, 0.08), oscuro)
-        for x in (-0.14, 0, 0.14):
-            for y in (-0.16, 0.16):
-                linea(self.cuerpo, [(x, y, -0.015), (0, 0, 0)], CIAN, 1)
+                                      (0.09, 0.09, 0.09), AMBAR)
 
     def _crear_panel(self):
         self.panel = self.pixel2d.attachNewNode("laboratorio")
@@ -334,9 +315,12 @@ class Visor(ShowBase):
         self.balance = energias(self.r)
         self.piso_m, postura = PISOS[self.indice_piso]
         self.segmentos = segmentos(self.r, self.piso_m, piernas_rad=postura)
+        perfil_cab = self.segmentos["Cabeza"]
+        self.omega_cabeza = np.gradient(perfil_cab.angulo_rad, perfil_cab.t)
         self.elongacion = self.r.elongacion_m
         self.contacto = primer_contacto(self.segmentos)
         self.fin = self.contacto.tiempo_s if self.contacto else self.r.t[-1]
+        self.t_dano = 0.0
         self.piso.setZ(self.piso_m)
         self.paso_texto.setText(f"{self.r.paso_s * 1000:g} ms")
         for metodo, control in self.botones_metodo.items():
@@ -346,8 +330,9 @@ class Visor(ShowBase):
         self._dibujar()
 
     def _alternar(self):
-        if self.t >= self.fin:
+        if self.t >= self.fin and self.t_dano >= DURACION_DANO_S:
             self.t = 0.0
+            self.t_dano = 0.0
         self.play = not self.play
         if self.play:
             self._restablecer_camara()
@@ -355,18 +340,24 @@ class Visor(ShowBase):
 
     def _inicio(self):
         self.t = 0.0
+        self.t_dano = 0.0
         self.play = False
         self._dibujar()
 
     def _paso(self):
         self.play = False
-        tiempos = self.r.tiempos_pasos_s
-        i = np.searchsorted(tiempos, self.t, side="right")
-        self.t = min(self.fin, float(tiempos[min(i, len(tiempos) - 1)]))
+        if self.t >= self.fin:
+            self.t_dano = min(DURACION_DANO_S, self.t_dano + 0.12)
+        else:
+            self.t_dano = 0.0
+            tiempos = self.r.tiempos_pasos_s
+            i = np.searchsorted(tiempos, self.t, side="right")
+            self.t = min(self.fin, float(tiempos[min(i, len(tiempos) - 1)]))
         self._dibujar()
 
     def _saltar_tensado(self):
         self.play = False
+        self.t_dano = 0.0
         self.t = min(self.fin, self.r.t_tensado_s)
         self.vista = "cuerpo"
         self._restablecer_camara()
@@ -375,7 +366,7 @@ class Visor(ShowBase):
     def _metodo(self, metodo):
         if metodo != self.metodo:
             self.metodo = metodo
-            self.t, self.play = 0.0, False
+            self.t, self.t_dano, self.play = 0.0, 0.0, False
             self._calcular()
 
     def _cambiar_h(self, delta):
@@ -399,8 +390,14 @@ class Visor(ShowBase):
         dt = min(0.05, ahora - self.ultimo_cuadro)
         self.ultimo_cuadro = ahora
         if self.play:
-            self.t = min(self.fin, avanzar_reloj(self.t, dt, self.r.t_tensado_s))
-            self.play = self.t < self.fin
+            if self.t < self.fin:
+                self.t = min(self.fin, avanzar_reloj(self.t, dt, self.r.t_tensado_s))
+                if self.t >= self.fin:
+                    self.t_dano = 0.0
+            else:
+                self.t_dano = min(DURACION_DANO_S, self.t_dano + dt)
+                if self.t_dano >= DURACION_DANO_S:
+                    self.play = False
             self._dibujar()
         elif self.arrastre_x is not None:
             x = self._raton_en_visor()
@@ -417,17 +414,42 @@ class Visor(ShowBase):
         t = self.t
         altura = float(np.interp(t, r.t, r.altura_torso_m))
         altura_ref = float(np.interp(t, self.referencia.t, self.referencia.altura_torso_m))
+        v_m_s = float(np.interp(t, r.t, r.v_m_s))
+        a_m_s2 = float(np.interp(t, r.t, r.a_m_s2))
+        a_g = a_m_s2 / r.escena.gravedad_m_s2
         tau = t - r.t_tensado_s
         frenado = tau >= 0
-        self.cuerpo.setZ(altura)
         self.fantasma.setPos(0, 0.31, altura_ref)
-        inclinacion(self.cuerpo, -36 * float(np.clip(-tau / 1.3, 0, 1)))
-        for nombre, nodo, signo in (("Cabeza", self.cabeza, 1), ("Piernas", self.piernas, -1)):
-            perfil = self.segmentos[nombre]
-            giro = np.interp(t, perfil.t, perfil.angulo_rad)
-            inclinacion(nodo, signo * float(np.degrees(giro)))
-        for i, brazo in enumerate(self.brazos):
-            brazo.setR((-1)**i * (10*np.sin(4*t) if not frenado else min(45, 1600*tau)))
+
+        perfil_cab = self.segmentos["Cabeza"]
+        perfil_pie = self.segmentos["Piernas"]
+        ang_cab = float(np.interp(t, perfil_cab.t, perfil_cab.angulo_rad))
+        omega_cab = float(np.interp(t, perfil_cab.t, self.omega_cabeza)) if frenado else 0.0
+        ang_pie = float(np.interp(t, perfil_pie.t, perfil_pie.angulo_rad))
+
+        carga = (a_m_s2 + r.escena.gravedad_m_s2) if frenado else 0.0
+        cuerpo = r.escena.cuerpo
+        m_cuello = cuerpo.masa_cabeza_kg * cuerpo.r_cuello_m * carga
+        m_cadera = cuerpo.masa_piernas_kg * cuerpo.r_cadera_m * carga
+
+        self.personaje.actualizar(
+            t=t,
+            tau=tau,
+            altura=altura,
+            v_m_s=v_m_s,
+            a_g=a_g,
+            angulo_cabeza_rad=ang_cab,
+            omega_cabeza_rad_s=omega_cab,
+            angulo_piernas_rad=ang_pie,
+            m_cuello_nm=m_cuello,
+            m_cadera_nm=m_cadera,
+            contacto=self.contacto,
+            en_fin=t >= self.fin - 1e-12,
+            t_dano=self.t_dano,
+            piso_m=self.piso_m,
+            tablas_piso=self.tablas_piso,
+        )
+
         self.seda.node().removeAllChildren()
         inicio = max(0.0, r.t_tensado_s - 0.52)
         if t >= inicio:
@@ -490,6 +512,8 @@ class Visor(ShowBase):
         if self.contacto and t >= self.fin:
             mensaje += (f"\nPrimer contacto: {self.contacto.segmento.lower()}"
                         f"   |   {self.contacto.energia_incidente_j:.0f} J incidentes")
+        elif t >= self.fin:
+            mensaje += "\nSin contacto con el piso   |   daño por latigazo cervical"
         self.estado.setText(mensaje)
 
 

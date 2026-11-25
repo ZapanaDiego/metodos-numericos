@@ -44,3 +44,14 @@ La entrega 19 enlaza el laboratorio desde el README y la sustentación.
 | 06 | Tensión con ejes y cursores sincronizados |
 | 07 | EDO activa, pendiente de Euler y cuatro pendientes de RK4 |
 | 08 | Captura, manual, pruebas de regresión y benchmark de 60.0 FPS |
+
+## Mejora visual del personaje 3D y daños (Panda3D)
+
+| Iteración | Entrega verificada |
+|---|---|
+| A1 | Motor de mallas suaves `V3n3c4` (`visual/mallas_panda3d.py`), materiales e iluminación de 3 puntos |
+| A2 | Personaje femenino 3D anatómico articulado (`visual/personaje_panda3d.py`): rostro, cabello, gabardina y botas |
+| A3 | Caída dorsal aerodinámica, abanico de seda sincronizado al tensado y frenado con inercia secundaria |
+| A4 | Sistema de daños en cuerpo y piso con sub-reloj `t_dano` sin alterar `t`, lecturas ni cursores |
+| A5 | Tres desenlaces diferenciados: latigazo cervical en aire, trauma craneal (+1.00 m) y colapso de piernas (+0.85 m) |
+| A6 | Pruebas de geometría y sincronización, captura `resultados/panda_captura.png` y 411.7 FPS (p95 3.4 ms) |

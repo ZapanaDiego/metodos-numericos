@@ -298,7 +298,7 @@ que con una caída de 42 m sin aire y 50 kg obtiene `v ≈ 28.7 m/s`, `x ≈ 16.
 `k ≈ 204.5 N/m` y `E ≈ 343 MPa` para un límite de 6 g. El mecanismo del
 latigazo es el que Marvel confirmó en el correo de lectores de *ASM* #125.
 
-![Caída y frenado](resultados/frame_mp4.png)
+![Caída y frenado](resultados/panda_captura.png)
 
 ---
 

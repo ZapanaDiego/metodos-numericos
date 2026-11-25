@@ -109,3 +109,115 @@ def test_evento_de_ventana_reescala_panel_y_render(monkeypatch, visor_panda):
         assert app.camLens.getAspectRatio() == pytest.approx((x1 - x0) / (y1 - y0))
         panel = app.render2d.getRelativePoint(app.panel, Point3(1082, 0, -686))
         assert -1 < panel.x < 1 and -1 < panel.z < 1
+
+
+def test_mallas_procedurales_normales_y_triangulos():
+    pytest.importorskip("panda3d")
+    from panda3d.core import GeomVertexReader
+    from visual.mallas_panda3d import (
+        malla_elipsoide, malla_grietas_piso, malla_loft_eje, malla_toroide,
+    )
+
+    mallas = [
+        malla_loft_eje("tubo", [{"pos": 0.0, "r1": 0.1, "r2": 0.1}, {"pos": 0.5, "r1": 0.15, "r2": 0.12}], n_lados=20),
+        malla_elipsoide("esf", 0.1, 0.08, 0.09, (0.8, 0.6, 0.5, 1.0)),
+        malla_toroide("toro", 0.12, 0.015),
+        malla_grietas_piso("grietas", radio=0.5),
+    ]
+    for nodo in mallas:
+        assert nodo.getNumGeoms() == 1
+        geom = nodo.getGeom(0)
+        vdata = geom.getVertexData()
+        assert vdata.getNumRows() > 10
+        assert geom.getPrimitive(0).getNumPrimitives() > 10
+        rv = GeomVertexReader(vdata, "vertex")
+        rn = GeomVertexReader(vdata, "normal")
+        while not rv.isAtEnd():
+            v = rv.getData3f()
+            n = rn.getData3f()
+            assert np.all(np.isfinite([v.x, v.y, v.z]))
+            assert np.isclose(n.length(), 1.0, atol=1e-4)
+
+
+@pytest.mark.gui
+def test_animacion_personaje_y_danos_conservan_sincronizacion(visor_panda):
+    from visual.app_panda3d import DURACION_DANO_S
+
+    app = visor_panda
+    p = app.personaje
+
+    # Caída libre: abanico de seda y daños ocultos
+    app._inicio()
+    app.t = 1.0
+    app._dibujar()
+    assert p.abanico_seda.isHidden()
+    assert p.dano_cuello.isHidden()
+    assert p.dano_piso.isHidden()
+
+    # Frenado activo: abanico y estrés cervical visibles, piso intacto
+    app.t = app.r.t_tensado_s + 0.015
+    app._dibujar()
+    assert not p.abanico_seda.isHidden()
+    assert not p.dano_cuello.isHidden()
+    assert p.dano_piso.isHidden()
+
+    poses_finales = {}
+    for escenario in (0, 1, 2):
+        app.indice_piso = escenario
+        app._calcular()
+        app.t = app.fin
+        app.t_dano = 0.0
+        app._dibujar()
+        lecturas_fin = [dato.getText() for dato in app.lecturas]
+        cursores_fin = (app.grafica_v.cursor.getX(), app.grafica_f.cursor.getX())
+        altura_fin = app.cuerpo.getZ()
+
+        # Reproducir el sub-reloj visual de daño sin mover t ni lecturas ni cursores
+        app.play = True
+        app.ultimo_cuadro -= 0.04
+        for _ in range(16):
+            app.ultimo_cuadro -= 0.045
+            app._cuadro(app.taskMgr.getTasksNamed("reproducción")[0])
+        assert app.t == pytest.approx(app.fin)
+        assert app.t_dano == pytest.approx(DURACION_DANO_S)
+        assert not app.play
+        assert [dato.getText() for dato in app.lecturas] == lecturas_fin
+        assert (app.grafica_v.cursor.getX(), app.grafica_f.cursor.getX()) == cursores_fin
+        assert app.cuerpo.getZ() == pytest.approx(altura_fin)
+
+        poses_finales[escenario] = (
+            p.cabeza.getQuat(),
+            p.craneo.getHpr(),
+            p.rodillas[0].getQuat(),
+            p.muslos[0].getQuat(),
+        )
+
+        if escenario == 0:
+            # Caso base: sin contacto con el piso -> daño cervical en el aire, piso intacto
+            assert not p.dano_cuello.isHidden()
+            assert p.dano_piso.isHidden()
+            assert p.dano_craneo.isHidden()
+            assert p.dano_rodillas[0].isHidden()
+        elif escenario == 1:
+            # Contacto cabeza: daño craneal + piso fracturado, rodillas sin marca y sin atravesar piso
+            assert not p.dano_craneo.isHidden()
+            assert not p.dano_piso.isHidden()
+            assert p.dano_rodillas[0].isHidden()
+            assert p.malla_rostro.getTightBounds(app.render)[0].z >= app.piso_m - 0.02
+            assert p.malla_cabello_base.getTightBounds(app.render)[0].z >= app.piso_m - 0.02
+            assert p.manos[0].getTightBounds(app.render)[0].z >= app.piso_m - 0.02
+        else:
+            # Contacto piernas: daño en rodillas/tobillos + piso fracturado, cráneo sin marca
+            assert not p.dano_rodillas[0].isHidden()
+            assert not p.dano_tobillos[0].isHidden()
+            assert not p.dano_piso.isHidden()
+            assert p.dano_craneo.isHidden()
+            # Botas, manos y melena no atraviesan el piso (+0.85 m)
+            assert p.tobillos[0].getPos(app.render).z >= app.piso_m - 0.02
+            assert p.manos[0].getTightBounds(app.render)[0].z >= app.piso_m - 0.02
+            assert p.melena_tramos[-1].getTightBounds(app.render)[0].z >= app.piso_m - 0.025
+
+    # Las 3 animaciones de desenlace producen poses distintas
+    assert poses_finales[0] != poses_finales[1]
+    assert poses_finales[1] != poses_finales[2]
+    assert poses_finales[0] != poses_finales[2]

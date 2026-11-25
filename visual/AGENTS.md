@@ -25,3 +25,12 @@ efectivo. El catálogo de Linux usa scripts/instalar_lanzador.py.
 laboratorio_datos.py abre la corrida activa en una ventana independiente.
 Comparte el eje temporal entre gráficas y filtra las muestras por intervalo.
 animacion.avanzar_reloj aplica cámara lenta desde el evento de tensado.
+
+Personaje 3D y daños (A1–A6). `mallas_panda3d.py` construye geometría orgánica
+suavizada (`V3n3c4`) y `personaje_panda3d.py` arma la figura femenina articulada
+(cabeza/rostro, melena de 3 tramos, codos, rodillas y tobillos) respetando los
+pivotes y radios de `simulador/mediciones.py`. Al llegar a `self.fin`, el reloj
+físico `self.t` y todas las lecturas/gráficas quedan fijos mientras `self.t_dano`
+reproduce el desenlace de daño según `self.contacto` (latigazo cervical en aire,
+impacto craneal o colapso de piernas con grietas, ondas y astillas sobre `piso`).
+Evidencia en `resultados/panda_captura.png` y `tests/test_panel_panda3d.py`.
