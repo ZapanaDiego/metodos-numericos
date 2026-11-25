@@ -2,7 +2,9 @@
 
 **Curso** · Métodos Numéricos
 
-**Autor** · Diego
+**Autores** · 
+- Diego Eduardo Zapana Choquehuayta
+- Bran Yames Paz Patatingo
 
 El proyecto resuelve la caída con arrastre y el frenado por la seda con **Euler
 explícito y Runge–Kutta clásico de cuarto orden (RK4)**. El visor de escritorio
